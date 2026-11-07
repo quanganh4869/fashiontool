@@ -1,0 +1,136 @@
+# ==============================================================================
+# TrendMotion Studio Monorepo .gitignore
+# ==============================================================================
+
+# Dependencies
+node_modules/
+.pnpm-store/
+apps/web/node_modules/
+apps/api/node_modules/
+
+# Production builds
+dist/
+dist-ssr/
+build/
+*.local
+*.tsbuildinfo
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+apps/api/venv/
+backend/venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# Type checking & Linters
+.mypy_cache/
+.ruff_cache/
+
+# Environment variables
+.env
+*.env
+.env.*
+!.env.example
+
+# Application Data, Renders & Database (Ported from toolvideo)
+data/database/*.db
+data/database/*.sqlite*
+*.db
+*.sqlite
+*.sqlite3
+data/temp/*
+data/output/*
+data/media/videos/*
+data/media/images/*
+data/media/memes/*
+data/media/audio/*
+!data/database/.gitkeep
+!data/temp/.gitkeep
+!data/output/.gitkeep
+!data/media/videos/.gitkeep
+!data/media/images/.gitkeep
+!data/media/memes/.gitkeep
+!data/media/audio/.gitkeep
+
+# Sample Assets heavy binary media (keep manifests and thumbnails)
+data/sample_assets/backgrounds/*.mp4
+data/sample_assets/backgrounds/normalized/*.mp4
+data/sample_assets/voice_samples/*.wav
+!data/sample_assets/**/manifest.json
+!data/sample_assets/**/*.jpg
+
+# Large media files (not tracked in Git)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wmv
+*.tar.gz
+*.zip
+*.wav
+*.mp3
+
+# Logs & Temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE & Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Docker / DB data volumes
+.docker-data/
+postgres-data/
+redis-data/
+
+# External Cloned Repositories / Sub-tools
+spec-kit/

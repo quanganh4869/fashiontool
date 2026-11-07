@@ -1,0 +1,161 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { ModelProfileDetail } from '../types/model-management.types';
+import { validateModelName, validateModelDescription } from '../schemas/model-management.schemas';
+
+export interface ModelIdentityStepProps {
+  model: ModelProfileDetail;
+  onSaveAndContinue: (data: { displayName: string; description: string }) => Promise<void>;
+  onCancel: () => void;
+  isSaving: boolean;
+}
+
+export const ModelIdentityStep: React.FC<ModelIdentityStepProps> = ({
+  model,
+  onSaveAndContinue,
+  onCancel,
+  isSaving,
+}) => {
+  const initialName =
+    model.displayName && model.displayName !== 'Bản nháp người mẫu'
+      ? model.displayName
+      : '';
+  const [displayName, setDisplayName] = useState(initialName);
+  const [description, setDescription] = useState(model.description || '');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [descError, setDescError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const nameValidation = validateModelName(displayName);
+    if (!nameValidation.isValid) {
+      setNameError(nameValidation.error || 'Tên người mẫu không hợp lệ.');
+      return;
+    }
+    setNameError(null);
+
+    const descValidation = validateModelDescription(description);
+    if (!descValidation.isValid) {
+      setDescError(descValidation.error || 'Mô tả không hợp lệ.');
+      return;
+    }
+    setDescError(null);
+
+    await onSaveAndContinue({
+      displayName: displayName.trim(),
+      description: description.trim(),
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full bg-white border border-[#E8E5E0] rounded-xl p-6 sm:p-8 shadow-sm flex flex-col gap-6">
+      {/* Header of Step */}
+      <div className="border-b border-[#E8E5E0] pb-4">
+        <h2 className="text-xl font-bold text-[#242321]">Thông tin người mẫu</h2>
+        <p className="text-sm text-[#74716D] mt-1.5 leading-relaxed">
+          Đặt tên và ghi chú cho hồ sơ người mẫu để dễ dàng quản lý khi có nhiều người mẫu khác nhau.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-5 max-w-2xl">
+        {/* Model Display Name */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="model-name" className="text-sm font-semibold text-[#242321] flex items-center gap-1">
+            <span>Tên người mẫu</span>
+            <span className="text-[#A94442]">*</span>
+          </label>
+          <input
+            id="model-name"
+            type="text"
+            required
+            value={displayName}
+            onChange={(e) => {
+              setDisplayName(e.target.value);
+              if (nameError) setNameError(null);
+            }}
+            placeholder="Ví dụ: Linh, Linh Fashion, Mẫu chụp số 01"
+            className={`w-full h-10 px-3.5 text-sm text-[#242321] placeholder:text-[#97938E] bg-white rounded-md border transition-colors ${
+              nameError
+                ? 'border-[#A94442] focus:border-[#A94442] focus:ring-2 focus:ring-[#A94442]/20'
+                : 'border-[#D8D4CE] focus:border-[#654B7B] focus:ring-2 focus:ring-[#654B7B]/20'
+            }`}
+          />
+          {nameError && (
+            <p className="text-xs text-[#A94442] font-medium mt-0.5">{nameError}</p>
+          )}
+          <p className="text-xs text-[#74716D]">
+            Sử dụng từ 2 đến 60 ký tự để dễ dàng nhận biết người mẫu trong các dự án.
+          </p>
+        </div>
+
+        {/* Model Description */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="model-description" className="text-sm font-semibold text-[#242321]">
+              Mô tả hoặc ghi chú
+            </label>
+            <span className="text-xs text-[#74716D] tabular-nums">
+              {description.length} / 500
+            </span>
+          </div>
+          <textarea
+            id="model-description"
+            rows={4}
+            maxLength={500}
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              if (descError) setDescError(null);
+            }}
+            placeholder="Thêm ghi chú để phân biệt hồ sơ người mẫu này (ví dụ: phong cách thời trang, phong cách tạo dáng, ghi chú chụp hình)..."
+            className={`w-full p-3 text-sm text-[#242321] placeholder:text-[#97938E] bg-white rounded-md border transition-colors resize-none ${
+              descError
+                ? 'border-[#A94442] focus:border-[#A94442] focus:ring-2 focus:ring-[#A94442]/20'
+                : 'border-[#D8D4CE] focus:border-[#654B7B] focus:ring-2 focus:ring-[#654B7B]/20'
+            }`}
+          />
+          {descError && (
+            <p className="text-xs text-[#A94442] font-medium mt-0.5">{descError}</p>
+          )}
+        </div>
+
+        {/* Readonly Model Code */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-[#74716D]">
+            Mã người mẫu (Tự động)
+          </label>
+          <div className="h-10 px-3.5 flex items-center bg-[#F6F5F2] border border-[#E8E5E0] rounded-md text-sm font-mono text-[#4B4945] select-all">
+            {model.modelCode || 'Đang tạo mã...'}
+          </div>
+          <p className="text-xs text-[#74716D]">
+            Mã định danh duy nhất do hệ thống quản lý, không thể thay đổi.
+          </p>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-6 border-t border-[#E8E5E0] flex items-center justify-between">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isSaving}
+          className="text-xs font-medium"
+        >
+          Hủy tạo
+        </Button>
+
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isSaving}
+          disabled={isSaving || !displayName.trim()}
+          className="text-xs font-medium px-5"
+        >
+          Lưu và tiếp tục
+        </Button>
+      </div>
+    </form>
+  );
+};

@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trendmotion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trendmotion_db
+      POSTGRES_USER: trendmotion_user
+      POSTGRES_PASSWORD: trendmotion_dev_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trendmotion_user -d trendmotion_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trendmotion-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: trendmotion-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - trendmotion-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  trendmotion-network:
+    driver: bridge

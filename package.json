@@ -1,0 +1,24 @@
+{
+  "name": "trendmotion-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TrendMotion Studio - Fashion Affiliate Research & Video Production Platform",
+  "scripts": {
+    "desktop": "powershell -ExecutionPolicy Bypass -File ../launch-desktop.ps1",
+    "dev:web": "pnpm --filter @trendmotion/web dev",
+    "build:web": "pnpm --filter @trendmotion/web build",
+    "lint:web": "pnpm --filter @trendmotion/web lint",
+    "type-check:web": "pnpm --filter @trendmotion/web type-check",
+    "test:web": "pnpm --filter @trendmotion/web test",
+    "dev:api": "powershell -Command \"cd apps/api; if (Test-Path .venv/Scripts/python.exe) { .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000 } else { python -m uvicorn app.main:app --reload --port 8000 }\"",
+    "test:api": "powershell -Command \"cd apps/api; if (Test-Path .venv/Scripts/pytest.exe) { .venv/Scripts/pytest } else { pytest }\"",
+    "lint:api": "powershell -Command \"cd apps/api; if (Test-Path .venv/Scripts/ruff.exe) { .venv/Scripts/ruff check . } else { ruff check . }\"",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
