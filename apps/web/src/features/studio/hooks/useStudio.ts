@@ -76,7 +76,7 @@ export function useStudio() {
 
   // Sync route step if provided
   useEffect(() => {
-    if (routeStep && ['model', 'template', 'confirm', 'processing', 'result'].includes(routeStep)) {
+    if (routeStep && ['model', 'template', 'confirm', 'processing', 'result', 'products'].includes(routeStep)) {
       setStep(routeStep as StudioStep);
     }
   }, [routeStep]);
@@ -244,6 +244,7 @@ export function useStudio() {
     if (targetStep === 'confirm') return Boolean(selectedModel && selectedTemplate);
     if (targetStep === 'processing') return Boolean(generation);
     if (targetStep === 'result') return Boolean(generation && generation.status === 'COMPLETED');
+    if (targetStep === 'products') return Boolean(generation && generation.status === 'COMPLETED');
     return false;
   };
 

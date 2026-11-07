@@ -9,6 +9,7 @@ import { CompatibilityStep } from '../components/CompatibilityStep';
 import { GenerationProgressStep } from '../components/GenerationProgressStep';
 import { GenerationResultStep } from '../components/GenerationResultStep';
 import { ProjectHistoryDrawer } from '../components/ProjectHistoryDrawer';
+import { ProductManagementStep } from '@/features/products';
 
 export const StudioPage: React.FC = () => {
   const {
@@ -123,6 +124,14 @@ export const StudioPage: React.FC = () => {
               setStep('confirm');
             }}
             onOpenProjects={() => setIsProjectsDrawerOpen(true)}
+            onProceedToProducts={() => setStep('products')}
+          />
+        )}
+
+        {step === 'products' && generation && (
+          <ProductManagementStep
+            generation={generation}
+            onBackToBaseVideo={() => setStep('result')}
           />
         )}
       </div>

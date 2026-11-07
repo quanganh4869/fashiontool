@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, User, Clapperboard, CheckCheck, Loader2, PlayCircle } from 'lucide-react';
+import { Check, User, Clapperboard, CheckCheck, Loader2, PlayCircle, Package } from 'lucide-react';
 import { StudioStep } from '../types/studio.types';
 
 interface StudioStepperProps {
@@ -20,6 +20,7 @@ const STEPS: StepItem[] = [
   { key: 'confirm', title: '3. Kiểm tra tương thích', icon: CheckCheck },
   { key: 'processing', title: '4. Xử lý video', icon: Loader2 },
   { key: 'result', title: '5. Kết quả & Kiểm định', icon: PlayCircle },
+  { key: 'products', title: '6. Nhập sản phẩm', icon: Package },
 ];
 
 export const StudioStepper: React.FC<StudioStepperProps> = ({

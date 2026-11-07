@@ -5,6 +5,8 @@ import {
   FolderKanban,
   CheckCircle2,
   Film,
+  ArrowRight,
+  Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ModelTemplateGeneration } from '../types/studio.types';
@@ -15,12 +17,14 @@ interface GenerationResultStepProps {
   generation: ModelTemplateGeneration;
   onCreateNewVersion: () => void;
   onOpenProjects: () => void;
+  onProceedToProducts?: () => void;
 }
 
 export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
   generation,
   onCreateNewVersion,
   onOpenProjects,
+  onProceedToProducts,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoUrl = studioService.resolveMediaUrl(generation.outputVideoUrl);
@@ -55,7 +59,7 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
           </Button>
 
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
             onClick={onOpenProjects}
             className="gap-2"
@@ -63,6 +67,19 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
             <FolderKanban className="w-4 h-4" />
             Quản lý trong dự án
           </Button>
+
+          {onProceedToProducts && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onProceedToProducts}
+              className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+            >
+              <Package className="w-4 h-4" />
+              <span>Tiếp tục: Nhập sản phẩm</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 

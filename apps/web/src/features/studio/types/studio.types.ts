@@ -116,4 +116,4 @@ export interface ProjectDetail extends ProjectSummary {
   generations: ModelTemplateGeneration[];
 }
 
-export type StudioStep = 'model' | 'template' | 'confirm' | 'processing' | 'result';
+export type StudioStep = 'model' | 'template' | 'confirm' | 'processing' | 'result' | 'products';
