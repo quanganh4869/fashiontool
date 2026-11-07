@@ -27,9 +27,9 @@ TrendMotion Studio được kiến trúc để phục vụ các nhà sáng tạo
 - **Cache & Async Queue:** Redis 7, Celery.
 - **Code Quality:** Ruff, Pytest, Pytest-Asyncio.
 
-### Media & External Adapters (Định hướng kiến trúc):
-- **Media Engine:** FFmpeg cho pipeline cắt ghép và xử lý video.
-- **Object Storage:** Cloudflare R2 (tương thích chuẩn S3 API).
+### Media & Storage Architecture:
+- **Media Engine:** FFmpeg & FFprobe cục bộ cho pipeline dựng hình và xử lý video.
+- **Storage Engine:** Local Filesystem Storage (`LOCAL_STORAGE_ROOT=./data/storage`), bảo mật và phân quyền tuyệt đối qua Backend; không sử dụng Cloud Object Storage (R2/S3).
 - **AI Integrations:** Provider Adapter Pattern linh hoạt (không vendor lock-in).
 
 ---

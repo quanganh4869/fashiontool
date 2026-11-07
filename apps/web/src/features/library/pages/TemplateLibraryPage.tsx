@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { TemplateSearchToolbar } from '../components/TemplateSearchToolbar';
 import { TemplateFilterToolbar } from '../components/TemplateFilterToolbar';
@@ -10,6 +10,7 @@ import { TemplateSummary } from '../types/template.types';
 
 export const TemplateLibraryPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     searchInput,
     category,
@@ -47,7 +48,7 @@ export const TemplateLibraryPage: React.FC = () => {
   };
 
   const handleCardClick = (template: TemplateSummary) => {
-    navigate(`/library/${template.templateId}`);
+    navigate(`/library/${template.templateId}`, { state: { from: location.search } });
   };
 
   return (
@@ -109,7 +110,7 @@ export const TemplateLibraryPage: React.FC = () => {
         template={previewTemplate}
         isOpen={Boolean(previewTemplate)}
         onClose={handleClosePreview}
-        onNavigateDetail={(id) => navigate(`/library/${id}`)}
+        onNavigateDetail={(id) => navigate(`/library/${id}`, { state: { from: location.search } })}
       />
     </PageContainer>
   );

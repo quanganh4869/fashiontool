@@ -7,9 +7,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app.api.v1.endpoints.assets import register_asset_metadata
-from app.api.v1.endpoints.models import _MODELS_DB
-from app.api.v1.endpoints.templates import _TEMPLATES_CATALOG
 from app.core.config import settings
 from app.schemas.models import ModelStatus
 from app.schemas.personalization import (
@@ -26,9 +23,21 @@ from app.schemas.personalization import (
     QualityReviewReport,
 )
 from app.schemas.templates import TemplateStatus
-from app.services.storage import storage_service
+from app.services.storage import register_asset_metadata, storage_service
 
 logger = logging.getLogger(__name__)
+
+
+def _get_models_db() -> dict:
+    from app.api.v1.endpoints.models import _MODELS_DB
+
+    return _MODELS_DB
+
+
+def _get_templates_catalog() -> dict:
+    from app.api.v1.endpoints.templates import _TEMPLATES_CATALOG
+
+    return _TEMPLATES_CATALOG
 
 # In-memory storage for Projects and Generations
 _PROJECTS_DB: dict[str, dict[str, Any]] = {}
@@ -48,11 +57,11 @@ class PersonalizationService:
     def check_compatibility(
         self, model_id: str, template_id: str
     ) -> CompatibilityCheckResponse:
-        model = _MODELS_DB.get(model_id)
+        model = _get_models_db().get(model_id)
         if not model:
             raise ValueError(f"Không tìm thấy hồ sơ người mẫu '{model_id}'.")
 
-        template = _TEMPLATES_CATALOG.get(template_id)
+        template = _get_templates_catalog().get(template_id)
         if not template:
             raise ValueError(f"Không tìm thấy video mẫu '{template_id}'.")
 
@@ -223,8 +232,8 @@ class PersonalizationService:
                 "Video mẫu có các giới hạn tương thích. Vui lòng xác nhận bạn đã hiểu trước khi tiếp tục."
             )
 
-        model = _MODELS_DB[request.model_id]
-        template = _TEMPLATES_CATALOG[request.template_id]
+        model = _get_models_db()[request.model_id]
+        template = _get_templates_catalog()[request.template_id]
 
         # Manage Project
         project_id = request.project_id
@@ -325,8 +334,12 @@ class PersonalizationService:
         # Update model's used_in_projects_count
         model["used_in_projects_count"] = model.get("used_in_projects_count", 0) + 1
 
-        # Trigger background processing
-        asyncio.create_task(self.run_generation_pipeline(generation_id))
+        # Trigger background processing in a dedicated daemon thread so pipeline executes reliably
+        import threading
+        threading.Thread(
+            target=lambda: asyncio.run(self.run_generation_pipeline(generation_id)),
+            daemon=True,
+        ).start()
 
         return self._build_generation_response(gen_record)
 
@@ -351,8 +364,8 @@ class PersonalizationService:
             record["progress"] = 25
             await asyncio.sleep(0.5)
 
-            model = _MODELS_DB.get(record["model_id"])
-            template = _TEMPLATES_CATALOG.get(record["template_id"])
+            model = _get_models_db().get(record["model_id"])
+            template = _get_templates_catalog().get(record["template_id"])
             if not model or not template:
                 raise ValueError(
                     "Tài nguyên người mẫu hoặc video mẫu không còn tồn tại."
@@ -753,7 +766,11 @@ class PersonalizationService:
         record["error_message"] = None
         record["retry_count"] = record.get("retry_count", 0) + 1
 
-        asyncio.create_task(self.run_generation_pipeline(generation_id))
+        import threading
+        threading.Thread(
+            target=lambda: asyncio.run(self.run_generation_pipeline(generation_id)),
+            daemon=True,
+        ).start()
         return self._build_generation_response(record)
 
     def list_projects(self, user_id: str) -> list[ProjectSummaryResponse]:

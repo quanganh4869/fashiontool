@@ -1,9 +1,8 @@
 import io
 import time
+
 from fastapi.testclient import TestClient
 
-from app.api.v1.endpoints.models import _MODELS_DB
-from app.services.personalization import _GENERATIONS_DB, _PROJECTS_DB
 from app.main import app
 
 client = TestClient(app)

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { TemplateHeader } from './components/TemplateHeader';
 import { TemplateSearchToolbar } from './components/TemplateSearchToolbar';
@@ -198,7 +198,9 @@ describe('Template Card Component', () => {
 
     // Click favorite button
     const favBtn = screen.getByLabelText('Lưu vào yêu thích');
-    fireEvent.click(favBtn);
+    await act(async () => {
+      fireEvent.click(favBtn);
+    });
     expect(onToggleFav).toHaveBeenCalledWith(sample.templateId);
     expect(onClick).not.toHaveBeenCalled();
 
@@ -329,6 +331,23 @@ describe('Template Preview Dialog Component', () => {
     expect(onClose).toHaveBeenCalled();
     expect(onNavDetail).toHaveBeenCalledWith(sample.templateId);
   });
+
+  it('handles video player error and displays retry button in preview dialog', () => {
+    const sample = mockTemplatesFixture[0];
+    render(
+      <TemplatePreviewDialog
+        template={sample}
+        isOpen={true}
+        onClose={vi.fn()}
+      />
+    );
+
+    const videoEl = screen.getByText('Trình duyệt của bạn không hỗ trợ thẻ phát video HTML5.');
+    fireEvent.error(videoEl);
+
+    expect(screen.getByText('Không thể phát video mẫu từ Local Storage.')).toBeInTheDocument();
+    expect(screen.getByText('Thử lại')).toBeInTheDocument();
+  });
 });
 
 describe('Template Detail View Component', () => {
@@ -356,5 +375,26 @@ describe('Template Detail View Component', () => {
     const backBtn = screen.getByText('Thư viện video mẫu');
     fireEvent.click(backBtn);
     expect(onBack).toHaveBeenCalled();
+  });
+
+  it('triggers onToggleFavorite when favorite button clicked in detail view', async () => {
+    const onToggleFav = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <MemoryRouter>
+        <TemplateDetailView
+          template={mockDetailFixture}
+          isFavoriteLoading={false}
+          onToggleFavorite={onToggleFav}
+          onBack={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    const favButton = screen.getByText('Lưu video mẫu');
+    await act(async () => {
+      fireEvent.click(favButton);
+    });
+    expect(onToggleFav).toHaveBeenCalled();
   });
 });

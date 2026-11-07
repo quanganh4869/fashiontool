@@ -1,27 +1,22 @@
 from fastapi import APIRouter, HTTPException, Request, status
 
-from app.services.storage import storage_service
+from app.services.storage import (
+    _ASSETS_REGISTRY,
+    get_asset_metadata,
+    register_asset_metadata,
+    storage_service,
+    unregister_asset_metadata,
+)
+
+__all__ = [
+    "_ASSETS_REGISTRY",
+    "get_asset_metadata",
+    "register_asset_metadata",
+    "router",
+    "unregister_asset_metadata",
+]
 
 router = APIRouter(prefix="/assets", tags=["Assets"])
-
-# Global in-memory asset registry (mapping asset_id -> asset_dict)
-# Allows lookup across models, projects, and templates
-_ASSETS_REGISTRY: dict[str, dict] = {}
-
-
-def register_asset_metadata(asset_record: dict) -> None:
-    """Registers asset record in the centralized lookup registry."""
-    _ASSETS_REGISTRY[asset_record["asset_id"]] = asset_record
-
-
-def unregister_asset_metadata(asset_id: str) -> None:
-    """Removes asset record from registry."""
-    _ASSETS_REGISTRY.pop(asset_id, None)
-
-
-def get_asset_metadata(asset_id: str) -> dict | None:
-    """Retrieves asset record by asset_id."""
-    return _ASSETS_REGISTRY.get(asset_id)
 
 
 @router.get("/{asset_id}/view")

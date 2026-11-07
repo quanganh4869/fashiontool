@@ -60,8 +60,17 @@ class Settings(BaseSettings):
         if raw_path.is_absolute():
             return raw_path.resolve()
 
-        # Project root is 4 levels up from this file (app/core/config.py -> app/core -> app -> apps/api -> root)
-        repo_root = Path(__file__).resolve().parent.parent.parent.parent
+        # Find monorepo root (where pnpm-workspace.yaml or AGENTS.md resides)
+        current = Path(__file__).resolve().parent
+        repo_root = None
+        for p in list(current.parents):
+            if (p / "pnpm-workspace.yaml").is_file() or (p / "AGENTS.md").is_file():
+                repo_root = p
+                break
+        if not repo_root:
+            # Fallback 5 levels up: app/core/config.py -> core -> app -> api -> apps -> root
+            repo_root = Path(__file__).resolve().parents[4]
+
         resolved = (repo_root / raw_path).resolve()
         return resolved
 

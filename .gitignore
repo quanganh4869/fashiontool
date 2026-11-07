@@ -63,13 +63,19 @@ coverage.xml
 .env.*
 !.env.example
 
-# Application Data, Renders & Database (Ported from toolvideo)
-data/database/*.db
-data/database/*.sqlite*
+# Application Data, Renders & Database (Local Filesystem Architecture)
+data/storage/*
+!data/storage/.gitkeep
+data/db/*
+!data/db/.gitkeep
+data/temp/*
+!data/temp/.gitkeep
+apps/data/
 *.db
 *.sqlite
 *.sqlite3
-data/temp/*
+data/database/*.db
+data/database/*.sqlite*
 data/output/*
 data/media/videos/*
 data/media/images/*

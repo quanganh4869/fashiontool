@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle, RotateCcw, ArrowLeft } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { TemplateDetailView } from '../components/TemplateDetailView';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 export const TemplateDetailPage: React.FC = () => {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     template,
     isLoading,
@@ -20,7 +21,12 @@ export const TemplateDetailPage: React.FC = () => {
   } = useTemplateDetail(templateId);
 
   const handleBack = () => {
-    navigate('/library');
+    const fromSearch = (location.state as { from?: string } | undefined)?.from;
+    if (fromSearch) {
+      navigate(`/library${fromSearch}`);
+    } else {
+      navigate('/library');
+    }
   };
 
   // 1. Loading Skeleton state

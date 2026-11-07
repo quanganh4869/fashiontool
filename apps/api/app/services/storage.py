@@ -291,3 +291,23 @@ class LocalStorageService:
 
 # Global singleton instance
 storage_service = LocalStorageService()
+
+
+# Central in-memory asset registry (mapping asset_id -> asset_dict)
+_ASSETS_REGISTRY: dict[str, dict] = {}
+
+
+def register_asset_metadata(asset_record: dict) -> None:
+    """Registers asset record in the centralized lookup registry."""
+    _ASSETS_REGISTRY[asset_record["asset_id"]] = asset_record
+
+
+def unregister_asset_metadata(asset_id: str) -> None:
+    """Removes asset record from registry."""
+    _ASSETS_REGISTRY.pop(asset_id, None)
+
+
+def get_asset_metadata(asset_id: str) -> dict | None:
+    """Retrieves asset record by asset_id."""
+    return _ASSETS_REGISTRY.get(asset_id)
+

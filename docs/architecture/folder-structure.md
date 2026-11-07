@@ -125,7 +125,7 @@ apps/api/
 │   │   ├── tiktok_shop/        # TikTok Shop Affiliate API adapter
 │   │   ├── image_generation/   # Image Generation AI provider adapter
 │   │   ├── video_generation/   # Video Generation AI provider adapter
-│   │   ├── storage/            # Cloudflare R2 / S3 storage adapter
+│   │   ├── storage/            # Local Filesystem Storage adapter (LOCAL_STORAGE_ROOT)
 │   │   └── payments/           # Payment gateway adapter
 │   ├── workers/                # Cấu hình Celery application và tác vụ nền
 │   ├── middleware/             # Custom FastAPI middlewares (CORS, Auth, Logs)

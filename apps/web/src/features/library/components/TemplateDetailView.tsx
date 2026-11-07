@@ -5,7 +5,7 @@ import {
   Clock,
   Layers,
   Film,
-  Sparkles,
+  Shirt,
   ShieldCheck,
   AlertCircle,
   RotateCcw,
@@ -199,7 +199,7 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
           {/* Garment Slots Section */}
           <div className="flex flex-col gap-3 p-5 bg-white rounded-xl border border-[#D8D4CE]">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#242321]" />
+              <Shirt className="w-4 h-4 text-[#242321]" />
               <h2 className="text-base font-bold text-[#242321]">
                 Vị trí thay trang phục (Garment Slots)
               </h2>
