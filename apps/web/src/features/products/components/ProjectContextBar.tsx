@@ -36,7 +36,7 @@ export const ProjectContextBar: React.FC<ProjectContextBarProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Base Video sẵn sàng
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Base Video READY
             </span>
             <span className="text-xs text-[#74716D]">
               Dự án: <span className="text-[#242321] font-semibold">{generation.projectName}</span>

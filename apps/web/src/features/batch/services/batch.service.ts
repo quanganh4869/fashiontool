@@ -169,8 +169,12 @@ export const batchService = {
   resolveMediaUrl(path?: string | null): string {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    const base = config.apiUrl.replace(/\/+$/, '');
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    const base = config.apiUrl.replace(/\/+$/, '');
+    if (cleanPath.startsWith('/api/v1')) {
+      const host = base.replace(/\/api\/v1\/?$/, '');
+      return `${host}${cleanPath}`;
+    }
     return `${base}${cleanPath}`;
   },
 };

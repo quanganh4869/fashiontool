@@ -205,8 +205,12 @@ export const studioService = {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    const base = config.apiUrl.replace(/\/+$/, '');
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    const base = config.apiUrl.replace(/\/+$/, '');
+    if (cleanUrl.startsWith('/api/v1')) {
+      const host = base.replace(/\/api\/v1\/?$/, '');
+      return `${host}${cleanUrl}`;
+    }
     return `${base}${cleanUrl}`;
   },
 

@@ -1,4 +1,6 @@
 import hashlib
+import json
+import logging
 import os
 import re
 import shutil
@@ -293,21 +295,73 @@ class LocalStorageService:
 storage_service = LocalStorageService()
 
 
-# Central in-memory asset registry (mapping asset_id -> asset_dict)
+logger = logging.getLogger(__name__)
+
+# Central persistent asset registry (mapping asset_id -> asset_dict)
 _ASSETS_REGISTRY: dict[str, dict] = {}
+_ASSETS_FILE = settings.storage_root_path.parent / "db" / "assets_registry.json"
+
+
+def _save_assets_registry() -> None:
+    try:
+        _ASSETS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _ASSETS_FILE.write_text(
+            json.dumps(_ASSETS_REGISTRY, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning("Could not persist assets registry to disk: %s", e)
+
+
+def _load_assets_registry() -> None:
+    global _ASSETS_REGISTRY
+    try:
+        if _ASSETS_FILE.is_file():
+            loaded = json.loads(_ASSETS_FILE.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                _ASSETS_REGISTRY = loaded
+    except Exception as e:
+        logger.warning("Could not load assets registry from disk: %s", e)
+
+
+# Load upon import
+_load_assets_registry()
 
 
 def register_asset_metadata(asset_record: dict) -> None:
-    """Registers asset record in the centralized lookup registry."""
+    """Registers asset record in the centralized lookup registry and persists to disk."""
     _ASSETS_REGISTRY[asset_record["asset_id"]] = asset_record
+    _save_assets_registry()
 
 
 def unregister_asset_metadata(asset_id: str) -> None:
     """Removes asset record from registry."""
-    _ASSETS_REGISTRY.pop(asset_id, None)
+    if asset_id in _ASSETS_REGISTRY:
+        _ASSETS_REGISTRY.pop(asset_id, None)
+        _save_assets_registry()
 
 
 def get_asset_metadata(asset_id: str) -> dict | None:
-    """Retrieves asset record by asset_id."""
-    return _ASSETS_REGISTRY.get(asset_id)
+    """Retrieves asset record by asset_id, with fallback to filesystem scan."""
+    meta = _ASSETS_REGISTRY.get(asset_id)
+    if meta:
+        return meta
+
+    # Fallback: scan storage root for files matching asset_id
+    try:
+        root = settings.storage_root_path
+        if root.is_dir():
+            for p in root.rglob(f"*{asset_id}*"):
+                if p.is_file():
+                    rel = str(p.relative_to(root)).replace("\\", "/")
+                    mime = "video/mp4" if p.suffix.lower() == ".mp4" else (
+                        "image/jpeg" if p.suffix.lower() in [".jpg", ".jpeg"] else "application/octet-stream"
+                    )
+                    rec = {"asset_id": asset_id, "storage_path": rel, "mime_type": mime}
+                    _ASSETS_REGISTRY[asset_id] = rec
+                    _save_assets_registry()
+                    return rec
+    except Exception:
+        pass
+    return None
 
