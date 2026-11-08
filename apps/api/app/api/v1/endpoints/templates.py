@@ -576,6 +576,89 @@ def _build_detail(t: dict) -> TemplateDetailResponse:
     tid = t["template_id"]
     is_fav = tid in _USER_FAVORITES
 
+    built_scenes: list[TemplateSceneResponse] = []
+    for idx, s in enumerate(t.get("scenes", [])):
+        built_scenes.append(
+            TemplateSceneResponse(
+                scene_id=s.get("scene_id", f"{tid}_sc_{idx+1}"),
+                template_id=s.get("template_id", tid),
+                scene_order=s.get("scene_order", idx + 1),
+                start_time_ms=s.get("start_time_ms", 0),
+                end_time_ms=s.get("end_time_ms", t.get("duration_ms", 10000)),
+                action_description=s.get("action_description", "Chuyển động người mẫu thời trang"),
+                camera_movement=s.get("camera_movement", "tracking"),
+                framing=s.get("framing", "full_body"),
+                subject_visibility=s.get("subject_visibility", "FULL"),
+            )
+        )
+    if not built_scenes:
+        built_scenes.append(
+            TemplateSceneResponse(
+                scene_id=f"{tid}_sc_1",
+                template_id=tid,
+                scene_order=1,
+                start_time_ms=0,
+                end_time_ms=t.get("duration_ms", 10000),
+                action_description="Chuyển động người mẫu thời trang",
+                camera_movement="tracking",
+                framing="full_body",
+                subject_visibility="FULL",
+            )
+        )
+
+    built_slots: list[TemplateGarmentSlotResponse] = []
+    for idx, g in enumerate(t.get("garment_slots", [])):
+        raw_status = str(g.get("assessment_status", "SUPPORTED")).upper()
+        clean_status = (
+            AssessmentStatus(raw_status)
+            if raw_status in AssessmentStatus._value2member_map_
+            else AssessmentStatus.SUPPORTED
+        )
+        built_slots.append(
+            TemplateGarmentSlotResponse(
+                slot_id=g.get("slot_id", f"{tid}_slot_{idx+1}"),
+                template_id=g.get("template_id", tid),
+                slot_type=g.get("slot_type", "upper_body"),
+                slot_name=g.get("slot_name", "Trang phục nhận diện"),
+                assessment_status=clean_status,
+                visibility_level=g.get("visibility_level", "CLEAR"),
+                occlusion_status=g.get("occlusion_status", "Không có vật cản lớn"),
+                notes=g.get("notes"),
+            )
+        )
+    if not built_slots:
+        built_slots.append(
+            TemplateGarmentSlotResponse(
+                slot_id=f"{tid}_slot_upper",
+                template_id=tid,
+                slot_type="upper_body",
+                slot_name="Áo / Trang phục thân trên",
+                assessment_status=AssessmentStatus.SUPPORTED,
+                visibility_level="CLEAR",
+                occlusion_status="Không có vật cản lớn",
+                notes="Nhận diện tự động từ video mẫu.",
+            )
+        )
+
+    compat_raw = t.get("compatibility", {})
+    built_compat = TemplateCompatibilityResponse(
+        template_id=compat_raw.get("template_id", tid),
+        supported_aspect_ratios=compat_raw.get("supported_aspect_ratios", [t.get("aspect_ratio", "9:16")]),
+        supported_model_framings=compat_raw.get("supported_model_framings", ["full_body", "medium_shot"]),
+        supported_subject_count=compat_raw.get("supported_subject_count", 1),
+        supported_motion_types=compat_raw.get("supported_motion_types", ["walking", "posing"]),
+        face_visibility_requirement=compat_raw.get(
+            "face_visibility_requirement",
+            "Khuôn mặt rõ nét, góc nhìn chính diện hoặc nghiêng.",
+        ),
+        body_visibility_requirement=compat_raw.get(
+            "body_visibility_requirement",
+            "Dáng người rõ ràng trong khung hình.",
+        ),
+        occlusion_level=compat_raw.get("occlusion_level", "LOW"),
+        limitations=compat_raw.get("limitations", []),
+    )
+
     return TemplateDetailResponse(
         template_id=tid,
         template_code=t["template_code"],
@@ -600,11 +683,9 @@ def _build_detail(t: dict) -> TemplateDetailResponse:
         usage_count=t.get("usage_count", 0),
         published_at=t["published_at"],
         updated_at=t["updated_at"],
-        scenes=[TemplateSceneResponse(**s) for s in t.get("scenes", [])],
-        garment_slots=[
-            TemplateGarmentSlotResponse(**s) for s in t.get("garment_slots", [])
-        ],
-        compatibility=TemplateCompatibilityResponse(**t["compatibility"]),
+        scenes=built_scenes,
+        garment_slots=built_slots,
+        compatibility=built_compat,
     )
 
 
@@ -955,26 +1036,70 @@ async def upload_custom_template(
         "is_custom": True,
         "published_at": now_iso,
         "updated_at": now_iso,
-        "scenes": [asdict(s) for s in artifacts.scenes],
+        "scenes": [
+            {
+                "scene_id": getattr(s, "scene_id", f"{template_id}_sc_{idx+1}"),
+                "template_id": template_id,
+                "scene_order": getattr(s, "scene_order", idx + 1),
+                "start_time_ms": getattr(s, "start_time_ms", 0),
+                "end_time_ms": getattr(s, "end_time_ms", artifacts.duration_ms),
+                "action_description": getattr(s, "action_description", "Chuyển động người mẫu thời trang"),
+                "camera_movement": getattr(s, "camera_movement", "tracking"),
+                "framing": getattr(s, "framing", "full_body"),
+                "subject_visibility": getattr(s, "subject_visibility", "FULL"),
+            }
+            for idx, s in enumerate(artifacts.scenes)
+        ] or [
+            {
+                "scene_id": f"{template_id}_sc_1",
+                "template_id": template_id,
+                "scene_order": 1,
+                "start_time_ms": 0,
+                "end_time_ms": artifacts.duration_ms,
+                "action_description": "Chuyển động người mẫu thời trang",
+                "camera_movement": "tracking",
+                "framing": "full_body",
+                "subject_visibility": "FULL",
+            }
+        ],
         "garment_slots": [
             {
-                "slot_id": g.slot_id,
+                "slot_id": getattr(g, "slot_id", f"{template_id}_slot_{idx+1}"),
                 "template_id": template_id,
-                "slot_type": g.slot_type,
-                "slot_name": g.slot_name,
-                "assessment_status": g.assessment_status,
-                "bbox": g.bbox,
-                "confidence": g.confidence,
+                "slot_type": getattr(g, "slot_type", "upper_body"),
+                "slot_name": getattr(g, "slot_name", "Trang phục nhận diện"),
+                "assessment_status": (
+                    getattr(g, "assessment_status", "SUPPORTED")
+                    if str(getattr(g, "assessment_status", "")).upper() in ["SUPPORTED", "LIMITED", "UNSUPPORTED", "NOT_ASSESSED"]
+                    else "SUPPORTED"
+                ),
+                "visibility_level": "CLEAR",
+                "occlusion_status": "Không có vật cản lớn",
+                "notes": "Nhận diện tự động từ video tải lên.",
             }
-            for g in artifacts.garment_slots
+            for idx, g in enumerate(artifacts.garment_slots)
+        ] or [
+            {
+                "slot_id": f"{template_id}_slot_upper",
+                "template_id": template_id,
+                "slot_type": "upper_body",
+                "slot_name": "Áo / Trang phục thân trên",
+                "assessment_status": "SUPPORTED",
+                "visibility_level": "CLEAR",
+                "occlusion_status": "Không có vật cản lớn",
+                "notes": "Nhận diện tự động từ video tải lên.",
+            }
         ],
         "compatibility": {
-            "min_model_photos": 1,
-            "recommended_model_photos": 3,
-            "supported_orientations": ["front", "three_quarter_left", "three_quarter_right"],
-            "supported_motion_types": ["walking", "turning", "posing"],
+            "template_id": template_id,
+            "supported_aspect_ratios": [artifacts.aspect_ratio],
+            "supported_model_framings": ["full_body", "medium_shot"],
+            "supported_subject_count": 1,
+            "supported_motion_types": ["walking", "posing"],
+            "face_visibility_requirement": "Khuôn mặt rõ nét, góc nhìn chính diện hoặc nghiêng.",
+            "body_visibility_requirement": "Dáng người rõ ràng trong khung hình.",
+            "occlusion_level": "LOW",
             "limitations": [],
-            "occlusion_risks": [],
         },
     }
 
