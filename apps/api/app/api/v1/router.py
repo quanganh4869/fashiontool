@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     assets,
+    batch_production,
     health,
     models,
     overview,
@@ -22,3 +23,4 @@ api_router.include_router(templates.router)
 api_router.include_router(personalization.router)
 api_router.include_router(products.router)
 api_router.include_router(replacements.router)
+api_router.include_router(batch_production.router)

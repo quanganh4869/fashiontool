@@ -108,6 +108,7 @@ class GarmentReplacementPipeline:
         base_video_record: dict[str, Any],
         product_record: dict[str, Any],
         truth_sheet_record: dict[str, Any] | None = None,
+        start_immediately: bool = True,
     ) -> ReplacementJobResponse:
         # 1. Preflight check
         preflight_res = self.preflight.validate(
@@ -133,6 +134,7 @@ class GarmentReplacementPipeline:
             "product_title": product_record.get("custom_title") or product_record.get("title", "Sản phẩm thời trang"),
             "model_name": base_video_record.get("model_name", "Người mẫu"),
             "status": ReplacementJobStatus.PENDING.value,
+            "batch_id": request.batch_id,
             "current_step": "Khởi tạo tác vụ thay trang phục",
             "progress": 0,
             "created_at": created_at,
@@ -145,15 +147,28 @@ class GarmentReplacementPipeline:
         _REPLACEMENT_JOBS_DB[job_id] = job_record
         _save_jobs_db()
 
-        # Kick off background execution thread
-        thread = threading.Thread(
-            target=self._run_job_thread,
-            args=(job_id, base_video_record, product_record, preflight_res.truth_sheet),
-            daemon=True,
-        )
-        thread.start()
+        # Kick off background execution thread if requested
+        if start_immediately:
+            thread = threading.Thread(
+                target=self._run_job_thread,
+                args=(job_id, base_video_record, product_record, preflight_res.truth_sheet),
+                daemon=True,
+            )
+            thread.start()
 
         return ReplacementJobResponse(**job_record)
+
+    def execute_job_now(
+        self,
+        job_id: str,
+        base_video_record: dict[str, Any],
+        product_record: dict[str, Any],
+        truth_sheet: ProductTruthSheetSpec,
+    ) -> None:
+        """
+        Executes a job synchronously or inside an existing worker loop.
+        """
+        self._run_job_thread(job_id, base_video_record, product_record, truth_sheet)
 
     def _run_job_thread(
         self,

@@ -85,6 +85,7 @@ class CreateReplacementJobRequest(BaseModel):
     project_id: str
     base_video_asset_id: str
     product_asset_id: str
+    batch_id: str | None = None
     confirmed_limitations: bool = False
     processing_config: dict[str, Any] | None = None
 
@@ -113,6 +114,7 @@ class ReplacementJobResponse(BaseModel):
     product_title: str
     model_name: str
     status: ReplacementJobStatus
+    batch_id: str | None = None
     current_step: str
     progress: int
     created_at: str
