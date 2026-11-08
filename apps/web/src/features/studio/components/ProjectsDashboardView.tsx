@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Loader2,
   Trash2,
-  ArrowRight,
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -261,35 +260,21 @@ export const ProjectsDashboardView: React.FC<ProjectsDashboardViewProps> = ({
                   </div>
                 </div>
 
-                {/* Card Footer: Action button + Delete */}
-                <div className="pt-4 flex items-center justify-between gap-2 mt-2">
-                  <span className="text-[11px] text-[#A3A09B]">
-                    {new Date(project.updatedAt).toLocaleDateString('vi-VN')}
+                {/* Card Footer: Date + Delete Button (Clicking anywhere on card opens project) */}
+                <div className="pt-3.5 flex items-center justify-between border-t border-[#F0EFEA] text-[11px] text-[#A3A09B]">
+                  <span>
+                    Cập nhật: {new Date(project.updatedAt).toLocaleDateString('vi-VN')}
                   </span>
 
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={isDeleting}
-                      onClick={(e) => handleDeleteProject(e, project.projectId, project.name)}
-                      className="p-1.5 text-[#A3A09B] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      title="Xóa dự án"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                        isReady
-                          ? 'bg-[#654B7B] text-white hover:bg-[#523b65]'
-                          : 'bg-[#F6F5F2] text-[#242321] hover:bg-[#E8E5E0]'
-                      }`}
-                    >
-                      {isReady ? 'Mở dự án' : 'Xem dự án'}
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={(e) => handleDeleteProject(e, project.projectId, project.name)}
+                    className="p-1.5 text-[#A3A09B] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    title="Xóa dự án"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             );
