@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@/components/layout/PageContainer';
+import { Button } from '@/components/ui/Button';
 import { useStudio } from '../hooks/useStudio';
 import { StudioHeader } from '../components/StudioHeader';
 import { StudioStepper } from '../components/StudioStepper';
@@ -146,6 +147,24 @@ export const StudioPage: React.FC = () => {
             generation={generation}
             onBackToProducts={() => setStep('products')}
           />
+        )}
+
+        {step === 'confirm' && (!selectedModel || !selectedTemplate) && (
+          <div className="text-center py-12 bg-white rounded-xl border border-[#E8E5E0] p-6 space-y-3">
+            <p className="text-sm text-[#74716D]">Vui lòng chọn đủ người mẫu và video mẫu trước khi kiểm tra tương thích.</p>
+            <Button variant="primary" onClick={() => setStep(selectedModel ? 'template' : 'model')}>
+              Quay lại chọn {selectedModel ? 'video mẫu' : 'người mẫu'}
+            </Button>
+          </div>
+        )}
+
+        {['processing', 'result', 'products', 'replacement'].includes(step) && !generation && (
+          <div className="text-center py-12 bg-white rounded-xl border border-[#E8E5E0] p-6 space-y-3">
+            <p className="text-sm text-[#74716D]">Chưa có dữ liệu tiến trình tạo video.</p>
+            <Button variant="primary" onClick={() => setStep('model')}>
+              Quay lại bước 1: Chọn người mẫu
+            </Button>
+          </div>
         )}
       </div>
 

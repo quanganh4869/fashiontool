@@ -72,7 +72,7 @@ export const StudioStepper: React.FC<StudioStepperProps> = ({
                       : 'bg-slate-200 text-slate-500'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                  {isCompleted ? <Check className="w-3.5 h-3.5" /> : <span>{idx + 1}</span>}
                 </span>
                 <span className="hidden md:inline">{step.title}</span>
                 <span className="md:hidden">

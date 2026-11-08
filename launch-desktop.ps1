@@ -200,7 +200,9 @@ try {
         $appArgs = @(
             "--app=http://localhost:5173",
             "--user-data-dir=$appProfileDir",
-            "--window-size=1440,900"
+            "--window-size=1440,900",
+            "--disable-features=Translate",
+            "--disable-translate"
         )
         Start-Process -FilePath $browserExe -ArgumentList $appArgs | Out-Null
     } else {

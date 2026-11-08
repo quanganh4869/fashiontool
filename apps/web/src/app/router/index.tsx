@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
+import { RouteErrorBoundary } from '@/components/layout/RouteErrorBoundary';
 import { StudioPage } from '@/features/studio';
 import {
   ModelLibraryPage,
@@ -14,6 +15,7 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
   {
     path: '/',
     element: <AppShell />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         index: true,
