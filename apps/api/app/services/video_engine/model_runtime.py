@@ -4,16 +4,20 @@ import json
 import logging
 import os
 import platform
+import threading
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Global hardware execution lock: ensures only 1 heavy synthesis job runs at a time per GPU/system
+_EXECUTION_LOCK = threading.Semaphore(1)
+
 
 class ModelRuntimeManager:
     """
     Manages local hardware inspection, model checkpoints, device selection,
-    VRAM memory cleanup, and local execution mode for the Video Engine.
+    VRAM memory cleanup, execution slot queuing, and local execution mode for the Video Engine.
     Strictly forbids external AI inference calls.
     """
 
@@ -82,6 +86,57 @@ class ModelRuntimeManager:
             "gpu_details": gpu_info,
             "models_root": str(self.models_dir.resolve()),
         }
+
+    def check_system_resources(self, required_ram_gb: float = 1.0) -> dict[str, Any]:
+        """
+        Verifies system health and resource availability before launching video generation.
+        """
+        diag = self.get_hardware_diagnostics()
+        avail_ram = diag["available_ram_gb"]
+
+        if avail_ram < 0.4:
+            raise RuntimeError(
+                f"Không đủ bộ nhớ RAM trống ({avail_ram} GB) để chạy xử lý video. Yêu cầu tối thiểu 0.5 GB."
+            )
+
+        warnings: list[str] = []
+        if avail_ram < required_ram_gb:
+            warnings.append(
+                f"RAM khả dụng ({avail_ram} GB) thấp hơn mức đề xuất ({required_ram_gb} GB). Tự động kích hoạt cơ chế dọn dẹp bộ nhớ."
+            )
+            self.cleanup_memory()
+
+        return {
+            "is_sufficient": True,
+            "available_ram_gb": avail_ram,
+            "device": self._device,
+            "warnings": warnings,
+        }
+
+    def acquire_slot(self, task_name: str = "task", timeout_seconds: float = 120.0) -> bool:
+        """
+        Acquires exclusive hardware execution slot to prevent GPU/CPU thrashing in multi-job scenarios.
+        """
+        acquired = _EXECUTION_LOCK.acquire(timeout=timeout_seconds)
+        if not acquired:
+            raise TimeoutError(f"Hàng đợi GPU/CPU đang bận xử lý tác vụ khác ({task_name}). Vui lòng thử lại sau.")
+        return True
+
+    def release_slot(self) -> None:
+        """
+        Releases the execution slot.
+        """
+        try:
+            _EXECUTION_LOCK.release()
+        except ValueError:
+            pass
+
+    def get_model_fingerprint(self) -> str:
+        """
+        Returns a deterministic SHA-256 fingerprint of the installed local model suite.
+        """
+        raw = f"trendmotion-v1.0.0-{self._device}-{platform.machine()}"
+        return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
     def _ensure_manifest(self) -> None:
         """

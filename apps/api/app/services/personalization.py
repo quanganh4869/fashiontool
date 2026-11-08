@@ -25,6 +25,7 @@ from app.schemas.personalization import (
 from app.schemas.templates import TemplateStatus
 from app.services.storage import register_asset_metadata, storage_service
 from app.services.video_engine import local_video_engine
+from app.services.quality_control import local_quality_engine
 
 logger = logging.getLogger(__name__)
 
@@ -461,12 +462,14 @@ class PersonalizationService:
                             record["progress"] = prog
                             record["current_step"] = msg
 
+                        preset_choice = (record.get("processing_config") or {}).get("preset", "standard")
                         local_video_engine.personalize_video(
                             generation_id=generation_id,
                             template_source_video=src_video_path,
                             template_analysis_dir=analysis_dir,
                             model_photo_paths=model_photos,
                             output_dir=base_video_dir.parent,
+                            preset_name=preset_choice,
                             progress_callback=update_progress,
                         )
                         personalized_success = True
@@ -695,68 +698,24 @@ class PersonalizationService:
         self, video_path: Path, expected_width: int, expected_height: int
     ) -> QualityReviewReport:
         """
-        Runs rigorous quality inspection on the generated Personalized Base Video.
+        Runs rigorous quality inspection on the generated Personalized Base Video
+        using the quantitative computer vision quality engine.
         """
-        criteria: list[QualityCriterion] = []
+        # If pipeline already computed and saved quality_report.json, load and return it
+        qc_json_file = video_path.parent / "quality_report.json"
+        if qc_json_file.is_file():
+            try:
+                data = json.loads(qc_json_file.read_text(encoding="utf-8"))
+                return QualityReviewReport(**data)
+            except Exception as e:
+                logger.warning("Could not parse saved quality report: %s", e)
 
-        # 1. File Integrity & Container Structure
-        if video_path.is_file() and video_path.stat().st_size > 1024:
-            criteria.append(
-                QualityCriterion(
-                    key="file_integrity",
-                    name="Tính toàn vẹn của tệp MP4",
-                    status=QualityCriterionStatus.PASS,
-                    description="Tệp video MP4 hợp lệ, không bị lỗi cấu trúc header (moov/mdat).",
-                )
-            )
-        else:
-            criteria.append(
-                QualityCriterion(
-                    key="file_integrity",
-                    name="Tính toàn vẹn của tệp MP4",
-                    status=QualityCriterionStatus.NEEDS_REVIEW,
-                    description="Kích thước tệp nhỏ hơn ngưỡng chuẩn.",
-                )
-            )
-
-        # 2. Format & Resolution
-        criteria.append(
-            QualityCriterion(
-                key="format_and_resolution",
-                name="Tỷ lệ khung hình và độ phân giải",
-                status=QualityCriterionStatus.PASS,
-                description=f"Độ phân giải chuẩn dọc {expected_width}x{expected_height} (9:16).",
-            )
-        )
-
-        # 3. Temporal Motion Consistency
-        criteria.append(
-            QualityCriterion(
-                key="temporal_motion",
-                name="Tính nhất quán chuyển động qua các cảnh",
-                status=QualityCriterionStatus.PASS,
-                description="Bảo toàn cấu trúc camera tracking và nhịp thời gian của video mẫu.",
-            )
-        )
-
-        # 4. Facial Identity Preservation
-        criteria.append(
-            QualityCriterion(
-                key="facial_identity",
-                name="Bảo toàn nhận diện người mẫu",
-                status=QualityCriterionStatus.PASS,
-                description="Khuôn mặt và diện mạo người mẫu đồng nhất với ảnh tham chiếu.",
-            )
-        )
-
-        # 5. Frame Drop & Artifacts Check
-        criteria.append(
-            QualityCriterion(
-                key="frame_drop_check",
-                name="Kiểm tra sụt giảm khung hình & lỗi hình",
-                status=QualityCriterionStatus.PASS,
-                description="Không phát hiện hiện tượng mất frame hoặc khung hình đen bất thường.",
-            )
+        frames_candidate = video_path.parent.parent / "intermediate" / "smoothed"
+        return local_quality_engine.evaluate_base_video(
+            video_path=video_path,
+            expected_width=expected_width,
+            expected_height=expected_height,
+            frames_dir=frames_candidate if frames_candidate.is_dir() else None,
         )
 
         # 6. Audio Track Preservation

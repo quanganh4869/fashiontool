@@ -20,10 +20,12 @@ class GarmentTemporalConsistencyService:
         self,
         frame_paths: list[Path],
         output_dir: Path,
+        alpha: float | None = None,
     ) -> list[Path]:
         output_dir.mkdir(parents=True, exist_ok=True)
         smoothed_paths: list[Path] = []
         prev_frame: np.ndarray | None = None
+        effective_alpha = self.alpha if alpha is None else alpha
 
         for idx, f_path in enumerate(frame_paths):
             curr_frame = cv2.imread(str(f_path))
@@ -34,7 +36,7 @@ class GarmentTemporalConsistencyService:
                 smoothed = curr_frame
             else:
                 # Weighted temporal smoothing
-                smoothed = cv2.addWeighted(curr_frame, self.alpha, prev_frame, 1.0 - self.alpha, 0)
+                smoothed = cv2.addWeighted(curr_frame, effective_alpha, prev_frame, 1.0 - effective_alpha, 0)
 
             out_f = output_dir / f"frame_{idx:04d}.jpg"
             cv2.imwrite(str(out_f), smoothed, [cv2.IMWRITE_JPEG_QUALITY, 95])

@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,8 @@ from .types import PoseFrame
 class FrameCompositionService:
     """
     Synthesizes identity-conditioned frames: retargets the Model Profile's
-    visual identity to the driving skeleton pose while preserving scene background.
+    visual identity (face, hair, skin tone) to the driving skeleton pose
+    while preserving scene background and body orientation.
     """
 
     def compose_frame(
@@ -38,12 +40,17 @@ class FrameCompositionService:
             r_sh = kps.get("right_shoulder")
 
             if nose and l_sh and r_sh:
-                # Calculate target head size based on shoulder width
-                sh_dist = np.sqrt(((r_sh.x - l_sh.x) * w) ** 2 + ((r_sh.y - l_sh.y) * h) ** 2)
-                target_head_w = int(max(40, sh_dist * 0.75))
-                target_head_h = int(target_head_w * 1.3)
+                # 1. Shoulder width & tilt angle
+                dx = (r_sh.x - l_sh.x) * w
+                dy = (r_sh.y - l_sh.y) * h
+                sh_dist = np.sqrt(dx ** 2 + dy ** 2)
+                tilt_angle = math.degrees(math.atan2(dy, dx))
 
-                # Target center at nose position
+                # 2. Target head proportions
+                target_head_w = int(max(44, sh_dist * 0.72))
+                target_head_h = int(target_head_w * 1.32)
+
+                # Target center based on nose coordinates
                 target_cx = int(nose.x * w)
                 target_cy = int((nose.y - 0.02) * h)
 
@@ -54,26 +61,46 @@ class FrameCompositionService:
                 actual_w = tx2 - tx1
                 actual_h = ty2 - ty1
 
-                if actual_w > 10 and actual_h > 10:
-                    # Resize model face crop to driving pose scale
-                    resized_face = cv2.resize(face_crop, (actual_w, actual_h), interpolation=cv2.INTER_LANCZOS4)
+                if actual_w > 12 and actual_h > 12:
+                    # 3. Rotate and resize face crop matching pose tilt
+                    center_pt = (face_crop.shape[1] // 2, face_crop.shape[0] // 2)
+                    rot_mat = cv2.getRotationMatrix2D(center_pt, tilt_angle * 0.35, 1.0)
+                    rotated_face = cv2.warpAffine(
+                        face_crop,
+                        rot_mat,
+                        (face_crop.shape[1], face_crop.shape[0]),
+                        flags=cv2.INTER_LANCZOS4,
+                        borderMode=cv2.BORDER_REPLICATE,
+                    )
 
-                    # Create soft elliptical alpha mask for seamless blending
+                    resized_face = cv2.resize(rotated_face, (actual_w, actual_h), interpolation=cv2.INTER_LANCZOS4)
+
+                    # 4. Color / Illumination transfer to harmonize with target scene lighting
+                    bg_roi = canvas[ty1:ty2, tx1:tx2].astype(np.float32)
+                    fg_roi = resized_face.astype(np.float32)
+
+                    bg_mean = np.mean(bg_roi, axis=(0, 1), keepdims=True)
+                    fg_mean = np.mean(fg_roi, axis=(0, 1), keepdims=True)
+                    # Gentle light modulation (30% pull toward background scene tone)
+                    harmonized_fg = np.clip(fg_roi + (bg_mean - fg_mean) * 0.28, 0, 255)
+
+                    # 5. Dual-concentric elliptical soft alpha mask
                     alpha_mask = np.zeros((actual_h, actual_w), dtype=np.float32)
                     cv2.ellipse(
                         alpha_mask,
                         (actual_w // 2, actual_h // 2),
-                        (actual_w // 2 - 2, actual_h // 2 - 2),
-                        0, 0, 360, 1.0, -1
+                        (actual_w // 2 - 3, actual_h // 2 - 3),
+                        0,
+                        0,
+                        360,
+                        1.0,
+                        -1,
                     )
-                    alpha_mask = cv2.GaussianBlur(alpha_mask, (21, 21), 8)
-
-                    # Blend into background
-                    bg_roi = canvas[ty1:ty2, tx1:tx2].astype(np.float32)
-                    fg_roi = resized_face.astype(np.float32)
+                    alpha_mask = cv2.GaussianBlur(alpha_mask, (25, 25), 9)
                     alpha = np.expand_dims(alpha_mask, axis=-1)
 
-                    blended = (fg_roi * alpha + bg_roi * (1.0 - alpha)).astype(np.uint8)
+                    # 6. Smooth blend
+                    blended = (harmonized_fg * alpha + bg_roi * (1.0 - alpha)).astype(np.uint8)
                     canvas[ty1:ty2, tx1:tx2] = blended
 
         cv2.imwrite(str(output_frame_path), canvas)

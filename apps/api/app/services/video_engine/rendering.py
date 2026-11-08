@@ -26,6 +26,7 @@ class VideoRenderingService:
         source_audio_video_path: Path | None = None,
         width: int = 1080,
         height: int = 1920,
+        crf: int = 22,
     ) -> Path:
         output_video_path.parent.mkdir(parents=True, exist_ok=True)
         frame_pattern = frames_dir / "frame_%04d.jpg"
@@ -55,7 +56,7 @@ class VideoRenderingService:
             "-c:v", "libx264",
             "-pix_fmt", "yuv420p",
             "-preset", "fast",
-            "-crf", "22",
+            "-crf", str(crf),
             "-shortest",
             str(output_video_path),
         ])

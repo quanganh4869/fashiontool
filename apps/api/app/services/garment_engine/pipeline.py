@@ -18,6 +18,8 @@ from app.schemas.replacements import (
 from app.services.storage import register_asset_metadata, storage_service
 from app.services.video_engine.frame_extraction import FrameExtractionService
 from app.services.video_engine.model_runtime import ModelRuntimeManager
+from app.services.video_engine.presets import get_preset_config
+from app.services.quality_control import local_quality_engine
 
 from .garment_analysis import BaseVideoGarmentAnalysisService
 from .garment_structure import GarmentStructureService
@@ -199,6 +201,13 @@ class GarmentReplacementPipeline:
         final_dir.mkdir(parents=True, exist_ok=True)
         quality_dir.mkdir(parents=True, exist_ok=True)
 
+        preset_choice = record.get("processing_config", {}).get("preset", "standard")
+        preset = get_preset_config(preset_choice)
+
+        acquired = self.runtime.acquire_slot(f"garment_{job_id}")
+        if not acquired:
+            logger.warning("Resource semaphore acquisition timed out for %s, continuing with fallback throttle.", job_id)
+
         try:
             # STAGE 1: VALIDATING_INPUTS (5%)
             record["status"] = ReplacementJobStatus.VALIDATING_INPUTS.value
@@ -342,6 +351,7 @@ class GarmentReplacementPipeline:
             smoothed_paths = self.temporal_smoother.smooth_sequence(
                 frame_paths=composed_paths,
                 output_dir=smoothed_dir,
+                alpha=preset.temporal_alpha,
             )
 
             # STAGE 7: RENDERING FINAL MP4 (94%)
@@ -356,13 +366,14 @@ class GarmentReplacementPipeline:
             side_by_side = quality_dir / "comparison_side_by_side.mp4"
 
             probe = self.frame_extractor.probe_video(base_video_path)
-            fps = min(probe["fps"], 30)
+            fps = min(preset.fps, probe["fps"])
 
             self.renderer.render_final_video(
                 frames_dir=smoothed_dir,
                 output_video_path=final_mp4,
                 fps=fps,
                 source_audio_path=base_video_path,
+                crf=preset.crf,
             )
 
             # Generate Thumbnail, Contact Sheet and Comparison
@@ -379,10 +390,50 @@ class GarmentReplacementPipeline:
             _save_jobs_db()
 
             has_occlusions = any(m.is_occluded for m in tracked_masks)
-            qr_report = self.quality_service.evaluate_replacement(
+            qr_report = local_quality_engine.evaluate_replacement_video(
+                video_path=final_mp4,
+                base_video_path=base_video_path,
                 truth_sheet=truth_sheet,
+                frames_dir=smoothed_dir,
                 has_occlusions=has_occlusions,
             )
+
+            # Step-level Retry Logic: If QC indicates failure or excessive temporal flicker
+            retry_count = record.get("retry_count", 0)
+            if qr_report.overall_status in ("FAIL", "RETRY_REQUIRED") and retry_count < 1:
+                logger.warning("Quality Review flagged '%s'. Initiating step-level smoothing & render retry...", qr_report.overall_status)
+                record["current_step"] = "Tự động tinh chỉnh và lọc mượt lại khung hình (Step Retry)"
+                record["retry_count"] = retry_count + 1
+                _save_jobs_db()
+
+                # Boost temporal alpha for stronger frame stabilization
+                boosted_alpha = min(0.96, preset.temporal_alpha + 0.06)
+                smoothed_paths = self.temporal_smoother.smooth_sequence(
+                    frame_paths=composed_paths,
+                    output_dir=smoothed_dir,
+                    alpha=boosted_alpha,
+                )
+                self.renderer.render_final_video(
+                    frames_dir=smoothed_dir,
+                    output_video_path=final_mp4,
+                    fps=fps,
+                    source_audio_path=base_video_path,
+                    crf=preset.crf,
+                )
+                self.renderer.generate_contact_sheet(final_mp4, contact_sheet)
+                self.renderer.generate_side_by_side_comparison(base_video_path, final_mp4, side_by_side)
+                sha256 = self.renderer.get_file_sha256(final_mp4)
+                qr_report = local_quality_engine.evaluate_replacement_video(
+                    video_path=final_mp4,
+                    base_video_path=base_video_path,
+                    truth_sheet=truth_sheet,
+                    frames_dir=smoothed_dir,
+                    has_occlusions=has_occlusions,
+                )
+
+            # Persist quality report json
+            qc_file = quality_dir / "quality_review.json"
+            qc_file.write_text(qr_report.model_dump_json(indent=2), encoding="utf-8")
 
             # STAGE 9: COMPLETED
             video_asset_id = str(uuid.uuid4())
@@ -439,6 +490,9 @@ class GarmentReplacementPipeline:
             record["current_step"] = f"Lỗi: {e}"
             _save_jobs_db()
             self.runtime.cleanup_memory()
+        finally:
+            if acquired:
+                self.runtime.release_slot()
 
 
 # Global singleton instance

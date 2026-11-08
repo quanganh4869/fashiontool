@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   CheckCircle2,
   RotateCcw,
@@ -10,6 +10,10 @@ import {
   ShieldCheck,
   Check,
   FileCheck,
+  StepBack,
+  StepForward,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -33,6 +37,42 @@ export const FinalProductVideoReview: React.FC<FinalProductVideoReviewProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<TabMode>('final');
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [currentFrame, setCurrentFrame] = useState<number>(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const fps = job.fps || 30;
+  const totalFrames = Math.max(1, Math.round(((job.duration_ms || 3000) / 1000) * fps));
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const curTime = videoRef.current.currentTime;
+      setCurrentFrame(Math.min(totalFrames, Math.round(curTime * fps)));
+    }
+  };
+
+  const handleStepFrame = (delta: number) => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+      const newTime = Math.max(0, Math.min(videoRef.current.duration || 10, videoRef.current.currentTime + delta * (1 / fps)));
+      videoRef.current.currentTime = newTime;
+      setCurrentFrame(Math.min(totalFrames, Math.round(newTime * fps)));
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
 
   // Retry modal state
   const [isRetryModalOpen, setIsRetryModalOpen] = useState(false);
@@ -191,17 +231,89 @@ export const FinalProductVideoReview: React.FC<FinalProductVideoReviewProps> = (
           </div>
 
           {/* Player / Media Viewer Container */}
-          <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg flex items-center justify-center min-h-[480px]">
+          <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg flex flex-col items-center justify-center min-h-[480px] relative group">
+            {/* Top Overlay Controls: Zoom Bar */}
             {activeTab === 'final' && finalVideoUrl && (
-              <div className="w-full h-full flex flex-col items-center justify-center p-2">
-                <video
-                  src={finalVideoUrl}
-                  controls
-                  playsInline
-                  loop
-                  autoPlay
-                  className="max-h-[640px] w-auto rounded-lg shadow-md"
-                />
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1 rounded-lg border border-slate-700/60 shadow-md">
+                <span className="text-[10px] uppercase font-mono text-slate-400 px-1.5">Zoom</span>
+                {[1, 1.5, 2].map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setZoomLevel(lvl)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold font-mono transition-colors ${
+                      zoomLevel === lvl
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    {lvl}x
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'final' && finalVideoUrl && (
+              <div className="w-full h-full flex flex-col items-center justify-center p-2 overflow-hidden">
+                <div className="overflow-hidden flex items-center justify-center max-h-[640px] w-full">
+                  <video
+                    ref={videoRef}
+                    src={finalVideoUrl}
+                    controls
+                    playsInline
+                    loop
+                    autoPlay
+                    onTimeUpdate={handleTimeUpdate}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    style={{
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'center center',
+                      transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                    className="max-h-[640px] w-auto rounded-lg shadow-md cursor-zoom-in"
+                  />
+                </div>
+
+                {/* Bottom Frame Stepper & Inspector Toolbar */}
+                <div className="w-full mt-2 pt-2 px-3 pb-1 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStepFrame(-1)}
+                      title="Lùi 1 khung hình"
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+                    >
+                      <StepBack className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      title={isPlaying ? 'Tạm dừng' : 'Phát tiếp'}
+                      className="p-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+                    >
+                      {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleStepFrame(1)}
+                      title="Tiến 1 khung hình"
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+                    >
+                      <StepForward className="w-3.5 h-3.5" />
+                    </button>
+
+                    <span className="text-[11px] font-mono font-medium text-slate-300 ml-1">
+                      Frame {currentFrame} / {totalFrames}
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-slate-400">
+                    Phóng to để kiểm tra hàng 6 cúc áo & ve cổ
+                  </div>
+                </div>
               </div>
             )}
 

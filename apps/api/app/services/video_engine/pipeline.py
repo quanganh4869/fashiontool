@@ -12,11 +12,13 @@ from .motion_data import MotionDataService
 from .motion_retargeting import MotionRetargetingService
 from .person_tracking import PersonTrackingService
 from .pose_estimation import PoseEstimationService
+from .presets import get_preset_config
 from .rendering import VideoRenderingService
 from .scene_analysis import SceneAnalysisService
 from .segmentation import SegmentationService
 from .temporal_consistency import TemporalConsistencyService
 from .types import VideoAnalysisArtifacts
+from app.services.quality_control import local_quality_engine
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +161,7 @@ class VideoEngine:
         template_analysis_dir: Path,
         model_photo_paths: list[Path],
         output_dir: Path,
+        preset_name: str = "standard",
         progress_callback: Any = None,
     ) -> Path:
         """
@@ -166,103 +169,129 @@ class VideoEngine:
         Identity Extraction -> Driving Pose Retargeting -> Frame Composition ->
         Layered Compositing -> Temporal Smoothing -> Media Rendering -> Contact Sheet.
         """
-        logger.info("Starting local Model Personalization Engine for generation: %s", generation_id)
+        preset = get_preset_config(preset_name)
+        logger.info(
+            "Starting local Model Personalization Engine for generation: %s (Preset: %s)",
+            generation_id,
+            preset.name,
+        )
 
-        raw_frames_dir = output_dir / "intermediate" / "raw_composed"
-        composited_dir = output_dir / "intermediate" / "composited"
-        smoothed_dir = output_dir / "intermediate" / "smoothed"
-        output_video_path = output_dir / "base-video" / "personalized_base_video.mp4"
-        output_thumb_path = output_dir / "base-video" / "thumbnail.jpg"
-        output_sheet_path = output_dir / "base-video" / "contact_sheet.jpg"
+        acquired = self.model_runtime.acquire_slot(f"personalize_{generation_id}")
+        if not acquired:
+            logger.warning("Resource semaphore acquisition timed out, proceeding with degraded throttle.")
 
-        raw_frames_dir.mkdir(parents=True, exist_ok=True)
-        composited_dir.mkdir(parents=True, exist_ok=True)
-        smoothed_dir.mkdir(parents=True, exist_ok=True)
-        output_video_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            raw_frames_dir = output_dir / "intermediate" / "raw_composed"
+            composited_dir = output_dir / "intermediate" / "composited"
+            smoothed_dir = output_dir / "intermediate" / "smoothed"
+            output_video_path = output_dir / "base-video" / "personalized_base_video.mp4"
+            output_thumb_path = output_dir / "base-video" / "thumbnail.jpg"
+            output_sheet_path = output_dir / "base-video" / "contact_sheet.jpg"
 
-        # 1. Extract Model Identity
-        if progress_callback:
-            progress_callback(25, "Trích xuất đặc điểm nhân dạng người mẫu từ ảnh tham chiếu")
-        identity_data = self.model_identity.extract_identity(model_photo_paths)
+            raw_frames_dir.mkdir(parents=True, exist_ok=True)
+            composited_dir.mkdir(parents=True, exist_ok=True)
+            smoothed_dir.mkdir(parents=True, exist_ok=True)
+            output_video_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # 2. Load Driving Motion Artifacts
-        if progress_callback:
-            progress_callback(40, "Nạp chuỗi tư thế chuyển động và mặt nạ phân vùng")
-        artifacts_data = self.motion_data.load_artifacts(template_analysis_dir)
-        poses = artifacts_data["pose_sequence"]
-        meta = artifacts_data["metadata"]
-        fps = meta.get("frame_rate", 30)
+            # 1. Extract Model Identity
+            if progress_callback:
+                progress_callback(25, "Trích xuất đặc điểm nhân dạng người mẫu từ ảnh tham chiếu")
+            identity_data = self.model_identity.extract_identity(model_photo_paths)
 
-        frames_src_dir = Path(meta["frames_dir"])
-        source_frame_files = sorted(frames_src_dir.glob("frame_*.jpg"))
-        if not source_frame_files:
-            raise FileNotFoundError(f"No driving frames found in {frames_src_dir}")
+            # 2. Load Driving Motion Artifacts
+            if progress_callback:
+                progress_callback(40, "Nạp chuỗi tư thế chuyển động và mặt nạ phân vùng")
+            artifacts_data = self.motion_data.load_artifacts(template_analysis_dir)
+            poses = artifacts_data["pose_sequence"]
+            meta = artifacts_data["metadata"]
+            fps = min(preset.fps, meta.get("frame_rate", 30))
 
-        # 3. Identity-conditioned Frame Composition
-        if progress_callback:
-            progress_callback(55, "Tổng hợp khung hình: Ghép người mẫu vào chuyển động video mẫu")
+            frames_src_dir = Path(meta["frames_dir"])
+            source_frame_files = sorted(frames_src_dir.glob("frame_*.jpg"))
+            if not source_frame_files:
+                raise FileNotFoundError(f"No driving frames found in {frames_src_dir}")
 
-        composed_frame_paths: list[Path] = []
-        for idx, src_frame in enumerate(source_frame_files):
-            pose_dict = poses[idx] if idx < len(poses) else poses[-1]
-            from .types import Keypoint, PoseFrame
-            kps_map = {k: Keypoint(**v) for k, v in pose_dict["keypoints"].items()}
-            pose_obj = PoseFrame(
-                frame_index=pose_dict["frame_index"],
-                timestamp_ms=pose_dict["timestamp_ms"],
-                keypoints=kps_map,
-                body_orientation=pose_dict["body_orientation"],
-                movement_vector=tuple(pose_dict["movement_vector"]),
-                gesture=pose_dict["gesture"],
+            # 3. Identity-conditioned Frame Composition
+            if progress_callback:
+                progress_callback(55, "Tổng hợp khung hình: Ghép người mẫu vào chuyển động video mẫu")
+
+            composed_frame_paths: list[Path] = []
+            for idx, src_frame in enumerate(source_frame_files):
+                pose_dict = poses[idx] if idx < len(poses) else poses[-1]
+                from .types import Keypoint, PoseFrame
+                kps_map = {k: Keypoint(**v) for k, v in pose_dict["keypoints"].items()}
+                pose_obj = PoseFrame(
+                    frame_index=pose_dict["frame_index"],
+                    timestamp_ms=pose_dict["timestamp_ms"],
+                    keypoints=kps_map,
+                    body_orientation=pose_dict["body_orientation"],
+                    movement_vector=tuple(pose_dict["movement_vector"]),
+                    gesture=pose_dict["gesture"],
+                )
+
+                out_f = raw_frames_dir / f"frame_{idx:04d}.jpg"
+                self.frame_compositor.compose_frame(
+                    source_frame_path=src_frame,
+                    mask_path=None,
+                    pose=pose_obj,
+                    identity_data=identity_data,
+                    output_frame_path=out_f,
+                )
+                composed_frame_paths.append(out_f)
+
+            # 4. Layered Compositing & Background Preservation
+            if progress_callback:
+                progress_callback(70, "Bảo toàn bối cảnh nền và xử lý hòa trộn đa tầng (Layered Compositing)")
+            composited_frame_paths = self.compositor.composite_frame_sequence(
+                source_frame_paths=source_frame_files,
+                synthesized_frame_paths=composed_frame_paths,
+                output_dir=composited_dir,
             )
 
-            out_f = raw_frames_dir / f"frame_{idx:04d}.jpg"
-            self.frame_compositor.compose_frame(
-                source_frame_path=src_frame,
-                mask_path=None,
-                pose=pose_obj,
+            # 5. Temporal Consistency Smoothing
+            if progress_callback:
+                progress_callback(85, "Áp dụng lọc mượt chuyển động và ổn định nhất quán khung hình (Temporal Smoothing)")
+            smoothed_frame_paths = self.temporal_smoother.smooth_frames(
+                frame_paths=composited_frame_paths or composed_frame_paths,
+                output_dir=smoothed_dir,
+                alpha=preset.temporal_alpha,
+            )
+
+            # 6. Final Video Assembly with FFmpeg
+            if progress_callback:
+                progress_callback(92, "Lắp ráp chuỗi khung hình, đồng bộ âm thanh gốc và đóng gói MP4")
+            self.renderer.render_video_from_frames(
+                frames_dir=smoothed_dir,
+                output_video_path=output_video_path,
+                fps=fps,
+                source_audio_video_path=template_source_video if template_source_video.is_file() else None,
+                width=preset.target_width,
+                height=preset.target_height,
+                crf=preset.crf,
+            )
+
+            # 7. Extract representative thumbnail and Contact Sheet
+            self.frame_extractor.extract_poster(output_video_path, output_thumb_path)
+            self.renderer.generate_contact_sheet(output_video_path, output_sheet_path)
+
+            # 8. Quantitative Base Video Quality Control
+            qc_report = local_quality_engine.evaluate_base_video(
+                video_path=output_video_path,
+                expected_width=preset.target_width,
+                expected_height=preset.target_height,
+                expected_fps=fps,
+                frames_dir=smoothed_dir,
                 identity_data=identity_data,
-                output_frame_path=out_f,
             )
-            composed_frame_paths.append(out_f)
+            qc_file = output_dir / "base-video" / "quality_report.json"
+            qc_file.write_text(qc_report.model_dump_json(indent=2), encoding="utf-8")
 
-        # 4. Layered Compositing & Background Preservation
-        if progress_callback:
-            progress_callback(70, "Bảo toàn bối cảnh nền và xử lý hòa trộn đa tầng (Layered Compositing)")
-        composited_frame_paths = self.compositor.composite_frame_sequence(
-            source_frame_paths=source_frame_files,
-            synthesized_frame_paths=composed_frame_paths,
-            output_dir=composited_dir,
-        )
-
-        # 5. Temporal Consistency Smoothing
-        if progress_callback:
-            progress_callback(85, "Áp dụng lọc mượt chuyển động và ổn định nhất quán khung hình (Temporal Smoothing)")
-        smoothed_frame_paths = self.temporal_smoother.smooth_frames(
-            frame_paths=composited_frame_paths or composed_frame_paths,
-            output_dir=smoothed_dir,
-            alpha=0.88,
-        )
-
-        # 6. Final Video Assembly with FFmpeg
-        if progress_callback:
-            progress_callback(92, "Lắp ráp chuỗi khung hình, đồng bộ âm thanh gốc và đóng gói MP4")
-        self.renderer.render_video_from_frames(
-            frames_dir=smoothed_dir,
-            output_video_path=output_video_path,
-            fps=fps,
-            source_audio_video_path=template_source_video if template_source_video.is_file() else None,
-            width=meta.get("width", 1080),
-            height=meta.get("height", 1920),
-        )
-
-        # 7. Extract representative thumbnail and Contact Sheet
-        self.frame_extractor.extract_poster(output_video_path, output_thumb_path)
-        self.renderer.generate_contact_sheet(output_video_path, output_sheet_path)
-
-        self.model_runtime.cleanup_memory()
-        logger.info("Model Personalization completed: %s", output_video_path)
-        return output_video_path
+            self.model_runtime.cleanup_memory()
+            logger.info("Model Personalization completed: %s (QC Status: %s)", output_video_path, qc_report.overall_status.value)
+            return output_video_path
+        finally:
+            if acquired:
+                self.model_runtime.release_slot()
 
 
 # Global singleton instance
