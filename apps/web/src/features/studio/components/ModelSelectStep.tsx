@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Image as ImageIcon,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -52,14 +53,32 @@ export const ModelSelectStep: React.FC<ModelSelectStepProps> = ({
           </p>
         </div>
 
-        <div className="w-full sm:w-72 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none z-10" />
-          <Input
-            placeholder="Tìm theo tên hoặc mã người mẫu..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-2.5">
+          <div className="w-full sm:w-64 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none z-10" />
+            <Input
+              placeholder="Tìm theo tên hoặc mã người mẫu..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {onNext && (
+            <Button
+              variant="primary"
+              onClick={onNext}
+              disabled={!selectedModel}
+              className={`gap-1.5 font-semibold px-4 py-2 text-xs shadow-sm transition-all shrink-0 ${
+                selectedModel
+                  ? 'bg-[#654B7B] hover:bg-[#523C64] text-white active:scale-98'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <span>Tiếp tục: Sang bước 2</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -201,6 +220,38 @@ export const ModelSelectStep: React.FC<ModelSelectStepProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Bottom Step-level Action Bar */}
+      {models.length > 0 && onNext && (
+        <div className="bg-white border border-[#E8E5E0] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+          <div className="text-xs text-[#74716D] flex items-center gap-2">
+            {selectedModel ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Đã chọn: <strong className="text-slate-900">{selectedModel.displayName}</strong> ({selectedModel.modelCode})
+              </span>
+            ) : (
+              <span className="text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 font-medium">
+                Hãy click vào một người mẫu ở trên để tiếp tục
+              </span>
+            )}
+          </div>
+
+          <Button
+            variant="primary"
+            onClick={onNext}
+            disabled={!selectedModel}
+            className={`gap-2 font-semibold px-6 py-2.5 text-sm shadow-sm transition-all w-full sm:w-auto ${
+              selectedModel
+                ? 'bg-[#654B7B] hover:bg-[#523C64] text-white active:scale-98'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <span>Tiếp tục: Sang bước 2 (Chọn video mẫu)</span>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </div>
       )}
 

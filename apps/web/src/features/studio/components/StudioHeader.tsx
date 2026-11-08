@@ -1,17 +1,23 @@
 import React from 'react';
-import { Sparkles, ArrowLeft, PlusCircle } from 'lucide-react';
+import { Sparkles, ArrowLeft, PlusCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface StudioHeaderProps {
   onBackToDashboard: () => void;
   onNewProject: () => void;
   activeProjectName?: string | null;
+  onNext?: () => void;
+  canNext?: boolean;
+  nextLabel?: string;
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = ({
   onBackToDashboard,
   onNewProject,
   activeProjectName,
+  onNext,
+  canNext = true,
+  nextLabel,
 }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E8E5E0]">
@@ -51,6 +57,23 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <PlusCircle className="w-3.5 h-3.5 text-[#654B7B]" />
           Tạo dự án mới
         </Button>
+
+        {onNext && nextLabel && (
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!canNext}
+            onClick={onNext}
+            className={`gap-1.5 text-xs font-semibold shadow-xs transition-all ${
+              canNext
+                ? 'bg-[#654B7B] hover:bg-[#523C64] text-white'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <span>{nextLabel}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     </div>
   );

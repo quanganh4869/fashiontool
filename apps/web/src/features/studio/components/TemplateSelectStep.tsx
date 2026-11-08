@@ -7,6 +7,8 @@ import {
   Layers,
   AlertCircle,
   UploadCloud,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,6 +36,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
   categories,
   selectedTemplate,
   onSelectTemplate,
+  onBack,
   onNext,
   isLoading,
   error,
@@ -65,7 +68,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          <div className="w-full sm:w-64 relative">
+          <div className="w-full sm:w-56 relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none z-10" />
             <Input
               placeholder="Tìm theo tiêu đề, danh mục..."
@@ -81,8 +84,24 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
             className="flex-shrink-0"
           >
             <UploadCloud className="w-4 h-4 mr-1.5" />
-            Tải lên video mới
+            Tải lên video
           </Button>
+
+          {onNext && (
+            <Button
+              variant="primary"
+              onClick={onNext}
+              disabled={!selectedTemplate}
+              className={`gap-1.5 font-semibold px-4 py-2 text-xs shadow-sm transition-all shrink-0 ${
+                selectedTemplate
+                  ? 'bg-[#654B7B] hover:bg-[#523C64] text-white active:scale-98'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <span>Tiếp tục: Sang bước 3</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -242,6 +261,54 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Bottom Step-level Action Bar */}
+      {templates.length > 0 && (
+        <div className="bg-white border border-[#E8E5E0] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {onBack && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onBack}
+                className="gap-1.5 shrink-0 text-xs font-semibold text-[#242321] border-[#D6D2CC]"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Quay lại bước 1</span>
+              </Button>
+            )}
+
+            <div className="text-xs text-[#74716D]">
+              {selectedTemplate ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Đã chọn: <strong className="text-slate-900">{selectedTemplate.title}</strong>
+                </span>
+              ) : (
+                <span className="text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 font-medium">
+                  Hãy click vào một video mẫu ở trên để tiếp tục
+                </span>
+              )}
+            </div>
+          </div>
+
+          {onNext && (
+            <Button
+              variant="primary"
+              onClick={onNext}
+              disabled={!selectedTemplate}
+              className={`gap-2 font-semibold px-6 py-2.5 text-sm shadow-sm transition-all w-full sm:w-auto ${
+                selectedTemplate
+                  ? 'bg-[#654B7B] hover:bg-[#523C64] text-white active:scale-98'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            >
+              <span>Tiếp tục: Sang bước 3 (Kiểm tra tương thích)</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )}
 

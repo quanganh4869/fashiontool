@@ -83,6 +83,36 @@ export const StudioPage: React.FC = () => {
     else if (step === 'replacement') setStep('products');
   };
 
+  const headerNextLabel =
+    step === 'model'
+      ? 'Tiếp tục: Sang bước 2'
+      : step === 'template'
+      ? 'Tiếp tục: Sang bước 3'
+      : step === 'confirm'
+      ? 'Tạo dự án & video'
+      : step === 'result'
+      ? 'Tiếp tục: Sang bước 6'
+      : step === 'products'
+      ? 'Tiếp tục: Sang bước 7'
+      : undefined;
+
+  const canNext =
+    step === 'model'
+      ? Boolean(selectedModel)
+      : step === 'template'
+      ? Boolean(selectedTemplate)
+      : step === 'confirm'
+      ? Boolean(compatibility?.canGenerate && !isCreatingGeneration)
+      : ['result', 'products'].includes(step);
+
+  const handleHeaderNext = () => {
+    if (step === 'confirm') {
+      handleStartGeneration(activeProjectName || undefined);
+    } else {
+      handleNextStep();
+    }
+  };
+
   return (
     <div className="h-full w-full flex flex-col overflow-hidden bg-[#F6F5F2]">
       {/* VIEW 1: PROJECTS DASHBOARD (DANH SÁCH DỰ ÁN) */}
@@ -105,6 +135,9 @@ export const StudioPage: React.FC = () => {
                 onBackToDashboard={() => setViewMode('dashboard')}
                 onNewProject={handleOpenCreateModal}
                 activeProjectName={activeProjectName}
+                onNext={headerNextLabel ? handleHeaderNext : undefined}
+                canNext={canNext}
+                nextLabel={headerNextLabel}
               />
               <StudioStepper
                 currentStep={step}
@@ -115,7 +148,7 @@ export const StudioPage: React.FC = () => {
           </div>
 
           {/* 2. SCROLLABLE MIDDLE WORKSPACE (ONLY THIS AREA SCROLLS) */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-7 lg:px-8 py-6">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-7 lg:px-8 py-6 pb-28">
             <div className="max-w-7xl mx-auto">
               {step === 'model' && (
                 <ModelSelectStep

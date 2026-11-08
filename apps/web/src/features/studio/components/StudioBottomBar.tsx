@@ -38,7 +38,7 @@ export const StudioBottomBar: React.FC<StudioBottomBarProps> = ({
   onStartGeneration,
 }) => {
   return (
-    <div className="shrink-0 bg-white border-t border-[#E8E5E0] z-30 px-4 sm:px-7 lg:px-8 py-3.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
+    <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-50 bg-white/98 backdrop-blur-md border-t-2 border-[#654B7B]/20 px-4 sm:px-7 lg:px-8 py-3.5 shadow-[0_-6px_25px_rgba(0,0,0,0.15)] transition-[left] duration-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* LEFT SECTION: Back button & Current Status */}
         <div className="flex items-center gap-3 min-w-0">
