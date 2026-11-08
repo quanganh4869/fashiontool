@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    TrendMotion Studio - Desktop App Launcher
+    TrendMotion Studio - Desktop App Launcher & Watchdog
     Chay ung dung TrendMotion Studio duoi dang Desktop App tren Windows
 #>
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$Host.UI.RawUI.WindowTitle = "TrendMotion Studio - Desktop App"
+$Host.UI.RawUI.WindowTitle = "TrendMotion Studio - Desktop App Server & Watchdog"
 
 # 1. Xac dinh thu muc goc cua du an
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -71,6 +71,26 @@ function Test-PortOpen([int]$port) {
     return $false
 }
 
+# Ham tim Python hop le (co du OpenCV, FastAPI, Uvicorn)
+function Get-WorkingPython {
+    $candidates = @(
+        "D:\Application\Python\Python313\python.exe",
+        (Join-Path $ApiDir ".venv\Scripts\python.exe"),
+        "python.exe"
+    )
+    foreach ($cand in $candidates) {
+        if (Test-Path $cand) {
+            try {
+                $test = & $cand -c "import cv2, fastapi, uvicorn; print('VALID_PYTHON')" 2>$null
+                if ($test -match "VALID_PYTHON") {
+                    return $cand
+                }
+            } catch {}
+        }
+    }
+    return "python.exe"
+}
+
 # Ham tat toan bo cay tien trinh (process tree)
 function Stop-ProcessTree([int]$pidToKill) {
     if ($pidToKill -gt 0) {
@@ -82,6 +102,7 @@ function Stop-ProcessTree([int]$pidToKill) {
 
 $startedApiPid = 0
 $startedWebPid = 0
+$pythonExe = Get-WorkingPython
 
 try {
     # 3. Kiem tra va khoi dong Backend API (Port 8000)
@@ -90,10 +111,7 @@ try {
         Write-Host " [DA SAN SANG]" -ForegroundColor Green
     } else {
         Write-Host " Dang khoi dong..." -ForegroundColor Yellow
-        $pythonExe = Join-Path $ApiDir ".venv\Scripts\python.exe"
-        if (-not (Test-Path $pythonExe)) {
-            $pythonExe = "python.exe"
-        }
+        Write-Host "      -> Su dung Python: $pythonExe" -ForegroundColor DarkGray
         
         $apiProc = Start-Process -FilePath $pythonExe `
             -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000") `
@@ -105,9 +123,9 @@ try {
             $startedApiPid = $apiProc.Id
         }
         
-        # Doi toi da 10 giay cho API
-        for ($i = 0; $i -lt 20; $i++) {
-            Start-Sleep -Milliseconds 400
+        # Doi toi da 15 giay cho API san sang
+        for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Milliseconds 500
             if (Test-PortOpen 8000) {
                 break
             }
@@ -141,13 +159,6 @@ try {
         # Doi frontend phan hoi
         for ($i = 0; $i -lt 30; $i++) {
             Start-Sleep -Milliseconds 500
-            try {
-                $req = Invoke-WebRequest -Uri "http://localhost:5173" -UseBasicParsing -TimeoutSec 1 -ErrorAction SilentlyContinue
-                if ($req.StatusCode -eq 200) {
-                    $webReady = $true
-                    break
-                }
-            } catch {}
             if (Test-PortOpen 5173) {
                 $webReady = $true
                 break
@@ -165,7 +176,7 @@ try {
     $candidateBrowsers = @(
         "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
         "${env:ProgramFiles}\Microsoft\Edge\Application\msedge.exe",
-        "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe",
+        "${env:Google\Chrome\Application\chrome.exe}",
         "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
         "${env:LocalAppData}\Google\Chrome\Application\chrome.exe",
         "${env:LocalAppData}\Microsoft\Edge\Application\msedge.exe"
@@ -185,29 +196,55 @@ try {
         New-Item -ItemType Directory -Path $appProfileDir -Force | Out-Null
     }
 
-    Write-Host ""
-    Write-Host "==========================================================" -ForegroundColor Green
-    Write-Host "  Ung dung Desktop dang chay!" -ForegroundColor Green
-    Write-Host "  URL: http://localhost:5173" -ForegroundColor Gray
-    Write-Host "  * Dong cua so Desktop app hoac nhan Ctrl+C de tat ung dung." -ForegroundColor Yellow
-    Write-Host "==========================================================" -ForegroundColor Green
-    Write-Host ""
-
     if ($browserExe) {
         $appArgs = @(
             "--app=http://localhost:5173",
             "--user-data-dir=$appProfileDir",
             "--window-size=1440,900"
         )
-        $appProc = Start-Process -FilePath $browserExe -ArgumentList $appArgs -PassThru
-        if ($appProc) {
-            $appProc.WaitForExit()
-        }
+        Start-Process -FilePath $browserExe -ArgumentList $appArgs | Out-Null
     } else {
-        # Fallback neu khong tim thay Edge/Chrome
-        Start-Process "http://localhost:5173"
-        Write-Host "Nhan Enter tai day de tat ung dung..." -ForegroundColor Yellow
-        Read-Host
+        Start-Process "http://localhost:5173" | Out-Null
+    }
+
+    Write-Host ""
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "  TRENDMOTION STUDIO DANG CHAY ON DINH!" -ForegroundColor Green
+    Write-Host "  - Backend API:  http://127.0.0.1:8000" -ForegroundColor Gray
+    Write-Host "  - Frontend Web: http://localhost:5173" -ForegroundColor Gray
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "[WATCHDOG] He thong giam sat tu dong dang hoat dong:" -ForegroundColor Cyan
+    Write-Host "  - Giu cho Backend & Frontend luon luon chay ngam on dinh." -ForegroundColor DarkGray
+    Write-Host "  - Tu dong khoi dong lai Backend ngay lap tuc neu gap su co." -ForegroundColor DarkGray
+    Write-Host "  * Nhan 'Q' roi Enter hoac Ctrl+C tai day de tat ung dung." -ForegroundColor Yellow
+    Write-Host ""
+
+    # 7. Vong lap giam sat (Watchdog loop) - Giu Backend va Frontend luon song
+    while ($true) {
+        Start-Sleep -Seconds 2
+
+        # Kiem tra Backend, tu dong hoi sinh neu rot
+        if (-not (Test-PortOpen 8000)) {
+            Write-Host "[WATCHDOG] Backend API bi ngat. Dang tu dong khoi dong lai..." -ForegroundColor Red
+            $apiProc = Start-Process -FilePath $pythonExe `
+                -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000") `
+                -WorkingDirectory $ApiDir `
+                -WindowStyle Hidden `
+                -PassThru
+            if ($apiProc) {
+                $startedApiPid = $apiProc.Id
+                Write-Host "      -> Da khoi dong lai Backend thanh cong (PID: $startedApiPid)!" -ForegroundColor Green
+            }
+        }
+
+        # Kiem tra phim Q de thoat
+        if ([Console]::KeyAvailable) {
+            $key = [Console]::ReadKey($true)
+            if ($key.Key -eq [ConsoleKey]::Q) {
+                Write-Host "Dang tat ung dung theo yeu cau cua ban..." -ForegroundColor Yellow
+                break
+            }
+        }
     }
 
 } finally {
