@@ -4,9 +4,11 @@ from app.api.v1.endpoints import (
     assets,
     batch_production,
     health,
+    integrations,
     models,
     overview,
     personalization,
+    product_research,
     products,
     replacements,
     templates,
@@ -24,3 +26,5 @@ api_router.include_router(personalization.router)
 api_router.include_router(products.router)
 api_router.include_router(replacements.router)
 api_router.include_router(batch_production.router)
+api_router.include_router(integrations.router)
+api_router.include_router(product_research.router)
