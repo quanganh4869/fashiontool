@@ -3,8 +3,6 @@ import {
   Clapperboard,
   Search,
   CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
   Clock,
   Layers,
   AlertCircle,
@@ -24,8 +22,8 @@ interface TemplateSelectStepProps {
   categories: TemplateCategory[];
   selectedTemplate: TemplateSummary | null;
   onSelectTemplate: (template: TemplateSummary) => void;
-  onBack: () => void;
-  onNext: () => void;
+  onBack?: () => void;
+  onNext?: () => void;
   isLoading: boolean;
   error?: string | null;
   onRefreshTemplates?: () => void;
@@ -36,7 +34,6 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
   categories,
   selectedTemplate,
   onSelectTemplate,
-  onBack,
   onNext,
   isLoading,
   error,
@@ -58,7 +55,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
   });
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">2. Chọn video thời trang mẫu</h2>
@@ -176,6 +173,10 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
                   onSelectTemplate(template);
                   setPreviewingTemplate(template);
                 }}
+                onDoubleClick={() => {
+                  onSelectTemplate(template);
+                  onNext?.();
+                }}
                 className={`group relative bg-white rounded-xl border transition-all cursor-pointer overflow-hidden flex flex-col ${
                   isSelected
                     ? 'border-[#654B7B] ring-2 ring-[#654B7B]/20 shadow-md'
@@ -243,38 +244,6 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
           })}
         </div>
       )}
-
-      {/* Pinned Bottom Navigation */}
-      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
-          <Button variant="secondary" onClick={onBack} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại: Chọn người mẫu
-          </Button>
-
-          <div className="flex items-center gap-4">
-            {selectedTemplate ? (
-              <p className="text-xs text-slate-700 hidden sm:block">
-                Đã chọn video: <span className="font-semibold text-slate-950">{selectedTemplate.title}</span>
-              </p>
-            ) : (
-              <p className="text-xs text-amber-700 font-medium hidden sm:block">
-                Vui lòng chọn một video mẫu
-              </p>
-            )}
-
-            <Button
-              variant="primary"
-              onClick={onNext}
-              disabled={!selectedTemplate}
-              className="gap-2 shadow-sm font-semibold px-5 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white"
-            >
-              Tiếp tục: Sang bước 3 (Kiểm tra & Tạo dự án)
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
 
       <TemplatePreviewDialog
         template={previewingTemplate}

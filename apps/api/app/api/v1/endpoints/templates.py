@@ -1,6 +1,7 @@
 import json
 import logging
 import shutil
+import subprocess
 import uuid
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -989,6 +990,32 @@ async def upload_custom_template(
     try:
         with open(abs_source_path, "wb") as f_out:
             shutil.copyfileobj(file.file, f_out)
+
+        # Normalize video for HTML5 playback: convert any HE-AACv2 audio to AAC-LC and move moov atom to start
+        norm_tmp = abs_source_path.with_name(f"{abs_source_path.stem}_norm.mp4")
+        try:
+            subprocess.run(
+                [
+                    settings.FFMPEG_PATH,
+                    "-y",
+                    "-i", str(abs_source_path),
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    "-b:a", "128k",
+                    "-movflags", "+faststart",
+                    str(norm_tmp),
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=True,
+                timeout=60,
+            )
+            if norm_tmp.is_file() and norm_tmp.stat().st_size > 0:
+                norm_tmp.replace(abs_source_path)
+        except Exception as norm_e:
+            logger.warning("Template video faststart normalization skipped: %s", norm_e)
+            if norm_tmp.is_file():
+                norm_tmp.unlink(missing_ok=True)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

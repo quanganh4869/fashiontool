@@ -157,18 +157,19 @@ export function useStudio() {
   };
 
   const handleStartGeneration = async (
-    projectName: string,
-    confirmedLimitations: boolean
+    projectName: string = '',
+    confirmedLimitations: boolean = false
   ) => {
     if (!selectedModel || !selectedTemplate) return;
 
     try {
       setIsCreatingGeneration(true);
+      const effectiveName = projectName.trim() || activeProjectName || undefined;
       const gen = await studioService.createGeneration({
         modelId: selectedModel.modelId,
         templateId: selectedTemplate.templateId,
         projectId: activeProjectId,
-        projectName: projectName.trim() || undefined,
+        projectName: effectiveName,
         confirmedLimitations,
       });
 
@@ -305,6 +306,7 @@ export function useStudio() {
     generation,
     activeProjectId,
     activeProjectName,
+    setActiveProjectName,
     isCreatingGeneration,
     isCancelling,
     isRetrying,

@@ -64,7 +64,7 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
     (status !== 'LIMITED' || confirmedLimitations);
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6 pb-8">
       <div>
         <h2 className="text-lg font-bold text-slate-900">3. Kiểm tra tương thích & Xác nhận</h2>
         <p className="text-sm text-slate-600">
@@ -302,34 +302,32 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
         </div>
       </div>
 
-      {/* Pinned Bottom Navigation */}
-      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
-          <Button variant="secondary" onClick={onBack} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại: Chọn video mẫu
-          </Button>
+      {/* Inline Bottom Action Card */}
+      <div className="bg-white border border-[#E8E5E0] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Button variant="secondary" onClick={onBack} className="gap-2 w-full sm:w-auto">
+          <ArrowLeft className="w-4 h-4" />
+          Quay lại: Chọn video mẫu
+        </Button>
 
-          <Button
-            variant="primary"
-            onClick={() => onStartGeneration(projectName, confirmedLimitations)}
-            disabled={!canGenerate || isCreating}
-            className="gap-2 shadow-sm font-semibold px-6 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white"
-          >
-            {isCreating ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Đang tạo dự án & khởi tạo video...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>Tạo dự án & Bắt đầu tạo video</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          variant="primary"
+          onClick={() => onStartGeneration(projectName, confirmedLimitations)}
+          disabled={!canGenerate || isCreating}
+          className="gap-2 shadow-sm font-semibold px-6 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white w-full sm:w-auto"
+        >
+          {isCreating ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Đang tạo dự án & khởi tạo video...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              <span>Tạo dự án & Bắt đầu tạo video</span>
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

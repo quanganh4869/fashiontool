@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/Button';
 import { useStudio } from '../hooks/useStudio';
 import { StudioHeader } from '../components/StudioHeader';
 import { StudioStepper } from '../components/StudioStepper';
+import { StudioBottomBar } from '../components/StudioBottomBar';
+import { CreateProjectModal } from '../components/CreateProjectModal';
 import { ModelSelectStep } from '../components/ModelSelectStep';
 import { TemplateSelectStep } from '../components/TemplateSelectStep';
 import { CompatibilityStep } from '../components/CompatibilityStep';
@@ -29,6 +31,7 @@ export const StudioPage: React.FC = () => {
     compatError,
     generation,
     activeProjectName,
+    setActiveProjectName,
     isCreatingGeneration,
     isCancelling,
     isRetrying,
@@ -46,16 +49,38 @@ export const StudioPage: React.FC = () => {
 
   // View mode: 'dashboard' (Danh sách dự án) vs 'wizard' (Các bước trong dự án)
   const [viewMode, setViewMode] = useState<'dashboard' | 'wizard'>('dashboard');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleStartNewProject = () => {
+  const handleOpenCreateModal = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleConfirmCreateProject = (projectName: string, _desc?: string) => {
     handleResetToNew();
+    setActiveProjectName(projectName);
     setStep('model');
     setViewMode('wizard');
+    setIsCreateModalOpen(false);
   };
 
   const handleSelectProjectFromDashboard = async (project: ProjectSummary) => {
     await handleOpenProject(project);
     setViewMode('wizard');
+  };
+
+  const handleNextStep = () => {
+    if (step === 'model') setStep('template');
+    else if (step === 'template') setStep('confirm');
+    else if (step === 'result') setStep('products');
+    else if (step === 'products') setStep('replacement');
+  };
+
+  const handlePrevStep = () => {
+    if (step === 'template') setStep('model');
+    else if (step === 'confirm') setStep('template');
+    else if (step === 'result') setStep('confirm');
+    else if (step === 'products') setStep('result');
+    else if (step === 'replacement') setStep('products');
   };
 
   return (
@@ -65,20 +90,20 @@ export const StudioPage: React.FC = () => {
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-7 lg:px-8 py-6">
           <div className="max-w-7xl mx-auto">
             <ProjectsDashboardView
-              onCreateNewProject={handleStartNewProject}
+              onCreateNewProject={handleOpenCreateModal}
               onOpenProject={handleSelectProjectFromDashboard}
             />
           </div>
         </div>
       ) : (
-        /* VIEW 2: PROJECT WORKSPACE & WIZARD (CHỈ HIỆN KHI BẤM VÀO DỰ ÁN HOẶC TẠO DỰ ÁN) */
-        <>
+        /* VIEW 2: PROJECT WORKSPACE & WIZARD (CÓ TOPBAR, STEPPER VÀ THANH ĐIỀU HƯỚNG BƯỚC KHÓA DƯỚI) */
+        <div className="h-full w-full flex flex-col overflow-hidden">
           {/* 1. TOPBAR & ROUTE STEPPER: 100% LOCKED AT TOP (NEVER SCROLLS) */}
           <div className="shrink-0 bg-white border-b border-[#E8E5E0] z-20 px-4 sm:px-7 lg:px-8 py-3.5 shadow-xs">
             <div className="max-w-7xl mx-auto space-y-3">
               <StudioHeader
                 onBackToDashboard={() => setViewMode('dashboard')}
-                onNewProject={handleStartNewProject}
+                onNewProject={handleOpenCreateModal}
                 activeProjectName={activeProjectName}
               />
               <StudioStepper
@@ -194,8 +219,28 @@ export const StudioPage: React.FC = () => {
               )}
             </div>
           </div>
-        </>
+
+          {/* 3. LOCKED BOTTOM BAR: 100% CỐ ĐỊNH CHÂN TRANG, KHÔNG BAO GIỜ BỊ CHE/MẤT NÚT TIẾP TỤC */}
+          <StudioBottomBar
+            currentStep={step}
+            selectedModel={selectedModel}
+            selectedTemplate={selectedTemplate}
+            compatibility={compatibility}
+            activeProjectName={activeProjectName}
+            isCreatingGeneration={isCreatingGeneration}
+            onNext={handleNextStep}
+            onBack={handlePrevStep}
+            onStartGeneration={() => handleStartGeneration(activeProjectName || undefined)}
+          />
+        </div>
       )}
+
+      {/* CREATE NEW PROJECT MODAL (ĐẶT TÊN DỰ ÁN TRƯỚC KHI VÀO STUDIO) */}
+      <CreateProjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onConfirm={handleConfirmCreateProject}
+      />
     </div>
   );
 };
