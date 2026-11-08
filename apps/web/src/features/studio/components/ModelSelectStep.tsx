@@ -44,7 +44,7 @@ export const ModelSelectStep: React.FC<ModelSelectStepProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900">1. Chọn hồ sơ người mẫu</h2>
@@ -201,29 +201,31 @@ export const ModelSelectStep: React.FC<ModelSelectStepProps> = ({
         </div>
       )}
 
-      {/* Sticky Footer Navigation */}
-      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border border-[#E8E5E0] p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] rounded-xl flex items-center justify-between">
-        <div>
-          {selectedModel ? (
-            <p className="text-xs text-slate-600">
-              Đã chọn: <span className="font-semibold text-slate-900">{selectedModel.displayName}</span>
-            </p>
-          ) : (
-            <p className="text-xs text-amber-700 font-medium">
-              Vui lòng chọn một người mẫu để tiếp tục
-            </p>
-          )}
-        </div>
+      {/* Pinned Bottom Navigation */}
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+          <div>
+            {selectedModel ? (
+              <p className="text-xs text-slate-700">
+                Đã chọn người mẫu: <span className="font-semibold text-slate-950">{selectedModel.displayName}</span>
+              </p>
+            ) : (
+              <p className="text-xs text-amber-700 font-medium">
+                Vui lòng chọn một người mẫu để tiếp tục
+              </p>
+            )}
+          </div>
 
-        <Button
-          variant="primary"
-          onClick={onNext}
-          disabled={!selectedModel}
-          className="gap-2 shadow-sm"
-        >
-          Tiếp tục: Chọn video mẫu
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+          <Button
+            variant="primary"
+            onClick={onNext}
+            disabled={!selectedModel}
+            className="gap-2 shadow-sm"
+          >
+            Tiếp tục: Chọn video mẫu
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       <ModelPreviewModal

@@ -25,7 +25,7 @@ export const ModelReviewStep: React.FC<ModelReviewStepProps> = ({
     model.referenceAssets[0];
 
   return (
-    <div className="w-full bg-white border border-[#E8E5E0] rounded-xl p-6 sm:p-8 shadow-sm flex flex-col gap-6">
+    <div className="w-full bg-white border border-[#E8E5E0] rounded-xl p-6 sm:p-8 shadow-sm flex flex-col gap-6 pb-28">
       {/* Header of Step */}
       <div className="border-b border-[#E8E5E0] pb-4">
         <h2 className="text-xl font-bold text-[#242321]">Kiểm tra hồ sơ người mẫu</h2>
@@ -159,28 +159,30 @@ export const ModelReviewStep: React.FC<ModelReviewStepProps> = ({
         Sau khi hoàn tất, hồ sơ này sẽ được lưu trong thư viện người mẫu và có thể được tái sử dụng trong nhiều dự án video.
       </p>
 
-      {/* Action Buttons - Sticky at Bottom */}
-      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-[#E8E5E0] -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-6 sm:px-7 rounded-b-xl flex items-center justify-between shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={onBack}
-          disabled={isFinalizing}
-          className="text-xs font-medium"
-        >
-          Quay lại
-        </Button>
+      {/* Pinned Bottom Navigation */}
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onBack}
+            disabled={isFinalizing}
+            className="text-xs font-medium"
+          >
+            Quay lại
+          </Button>
 
-        <Button
-          type="button"
-          variant="primary"
-          onClick={onFinalize}
-          isLoading={isFinalizing}
-          disabled={isFinalizing}
-          className="text-xs font-medium px-5 shadow-sm"
-        >
-          Hoàn tất hồ sơ người mẫu
-        </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={onFinalize}
+            isLoading={isFinalizing}
+            disabled={isFinalizing}
+            className="text-xs font-medium px-5 shadow-sm"
+          >
+            Hoàn tất hồ sơ người mẫu
+          </Button>
+        </div>
       </div>
     </div>
   );

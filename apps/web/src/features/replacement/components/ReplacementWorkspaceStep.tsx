@@ -4,6 +4,7 @@ import {
   PlusCircle,
   Layers,
   FolderKanban,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ModelTemplateGeneration } from '@/features/studio/types/studio.types';
@@ -346,7 +347,7 @@ export const ReplacementWorkspaceStep: React.FC<ReplacementWorkspaceStepProps> =
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Top Breadcrumb & Mode Selector Navigation */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -607,6 +608,24 @@ export const ReplacementWorkspaceStep: React.FC<ReplacementWorkspaceStepProps> =
         video={selectedCompareVideo}
         generation={generation}
       />
+
+      {/* Pinned Bottom Navigation */}
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+          <Button
+            variant="secondary"
+            onClick={onBackToProducts}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại: Danh sách sản phẩm (Bước 6)
+          </Button>
+
+          <div className="text-xs text-slate-500">
+            Dự án: <span className="font-semibold text-slate-900">{generation.projectName}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

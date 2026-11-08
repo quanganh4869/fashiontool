@@ -62,7 +62,10 @@ export const AppShell: React.FC = () => {
   }, [isMobileOpen]);
 
   return (
-    <div className="min-h-screen flex bg-[#F6F5F2] text-[#242321] font-sans antialiased">
+    <div
+      style={{ '--sidebar-w': isCollapsed ? '72px' : '252px' } as React.CSSProperties}
+      className="min-h-screen flex bg-[#F6F5F2] text-[#242321] font-sans antialiased"
+    >
       {/* Desktop Persistent Sidebar */}
       <div className="hidden lg:block shrink-0">
         <Sidebar

@@ -233,8 +233,10 @@ export const ModelCreateWizardPage: React.FC = () => {
       </div>
 
       {/* 3. Stepper Navigation - Fixed Sticky at Top */}
-      <div className="sticky top-16 z-20 bg-[#F6F5F2]/95 backdrop-blur-md pt-1 pb-3 -mt-2">
-        <ModelSetupStepper steps={steps} onStepClick={handleStepClick} />
+      <div className="sticky top-16 z-30 bg-[#F6F5F2] pt-2 pb-3 -mx-4 sm:-mx-7 lg:-mx-8 px-4 sm:px-7 lg:px-8 border-b border-[#E8E5E0] shadow-xs">
+        <div className="max-w-4xl mx-auto">
+          <ModelSetupStepper steps={steps} onStepClick={handleStepClick} />
+        </div>
       </div>
 
       {/* 4. Active Step Content */}

@@ -27,7 +27,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onOpenMobileMenu }) => {
   const currentTitle = ROUTE_NAME_MAP[currentPath] || 'Trang';
 
   return (
-    <header className="h-16 bg-white border-b border-[#E8E5E0] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
+    <header className="h-16 bg-white border-b border-[#E8E5E0] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shrink-0">
       {/* Left: Mobile Drawer Trigger & Breadcrumb */}
       <div className="flex items-center gap-3">
         {/* Mobile Hamburger Toggle Button */}

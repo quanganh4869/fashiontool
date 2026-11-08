@@ -6,6 +6,8 @@ import {
   RefreshCw,
   FolderOpen,
   Shirt,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ModelTemplateGeneration } from '@/features/studio/types/studio.types';
@@ -221,7 +223,7 @@ export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* 1. Project Context Bar */}
       <ProjectContextBar
         generation={generation}
@@ -402,6 +404,32 @@ export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
         onUpdate={handleUpdateProduct}
         isUpdating={isUpdatingProduct}
       />
+
+      {/* Pinned Bottom Navigation */}
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+          <Button
+            variant="secondary"
+            onClick={onBackToBaseVideo}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại: Kết quả Base Video
+          </Button>
+
+          {onProceedToReplacement && (
+            <Button
+              variant="primary"
+              onClick={() => onProceedToReplacement()}
+              disabled={products.length === 0}
+              className="gap-2 shadow-sm"
+            >
+              <span>Tiếp tục: Thay trang phục</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

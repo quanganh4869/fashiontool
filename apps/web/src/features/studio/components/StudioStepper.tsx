@@ -42,7 +42,10 @@ export const StudioStepper: React.FC<StudioStepperProps> = ({
 
   return (
     <div className="w-full bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-      <nav aria-label="Tiến trình studio" className="flex items-center justify-between overflow-x-auto">
+      <nav
+        aria-label="Tiến trình studio"
+        className="flex items-center justify-between overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
         {STEPS.map((step, idx) => {
           const isCurrent = step.key === currentStep;
           const isCompleted = idx < stepIndex;

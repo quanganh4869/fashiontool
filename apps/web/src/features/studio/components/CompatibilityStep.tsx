@@ -63,7 +63,7 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
     (status !== 'LIMITED' || confirmedLimitations);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div>
         <h2 className="text-lg font-bold text-slate-900">3. Kiểm tra tương thích & Xác nhận</h2>
         <p className="text-sm text-slate-600">
@@ -301,31 +301,33 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
         </div>
       </div>
 
-      {/* Sticky Footer Navigation */}
-      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border border-[#E8E5E0] p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] rounded-xl flex items-center justify-between">
-        <Button variant="secondary" onClick={onBack} className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Quay lại: Chọn video mẫu
-        </Button>
+      {/* Pinned Bottom Navigation */}
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+          <Button variant="secondary" onClick={onBack} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại: Chọn video mẫu
+          </Button>
 
-        <Button
-          variant="primary"
-          onClick={() => onStartGeneration(projectName, confirmedLimitations)}
-          disabled={!canGenerate || isCreating}
-          className="gap-2 shadow-sm"
-        >
-          {isCreating ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Đang khởi tạo job...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Bắt đầu tạo video cá nhân hóa
-            </>
-          )}
-        </Button>
+          <Button
+            variant="primary"
+            onClick={() => onStartGeneration(projectName, confirmedLimitations)}
+            disabled={!canGenerate || isCreating}
+            className="gap-2 shadow-sm"
+          >
+            {isCreating ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Đang khởi tạo job...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Bắt đầu tạo video cá nhân hóa
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
