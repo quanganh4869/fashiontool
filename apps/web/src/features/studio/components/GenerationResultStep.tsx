@@ -1,12 +1,12 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-  RotateCcw,
   Download,
   FolderKanban,
   CheckCircle2,
   Film,
-  ArrowRight,
-  Package,
+  Play,
+  Volume2,
+  VolumeX,
   User,
   Clapperboard,
 } from 'lucide-react';
@@ -23,30 +23,61 @@ interface GenerationResultStepProps {
 
 export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
   generation,
-  onCreateNewVersion,
   onOpenProjects,
-  onProceedToProducts,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoUrl = studioService.resolveMediaUrl(generation.outputVideoUrl);
 
   useEffect(() => {
+    // Attempt autoplay muted so modern browsers don't block
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      setIsMuted(true);
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => setIsPlaying(false));
+      }
+    }
+
     return () => {
       if (videoRef.current) {
         try {
           videoRef.current.pause();
           videoRef.current.muted = true;
-          videoRef.current.removeAttribute('src');
-          videoRef.current.load();
         } catch {}
       }
     };
-  }, []);
+  }, [videoUrl]);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
 
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-4 max-w-4xl mx-auto pb-4">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8E5E0]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#E8E5E0]">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-1 bg-emerald-100 text-emerald-700 rounded-md">
@@ -87,26 +118,57 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
       </div>
 
       {/* Main Video View - Centered Prominently */}
-      <div className="flex flex-col items-center justify-center pt-2">
-        <div className="w-full max-w-[420px] bg-white border border-[#E8E5E0] rounded-2xl overflow-hidden shadow-md p-4 space-y-3">
-          <div className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
+      <div className="flex flex-col items-center justify-center">
+        <div className="w-full max-w-[380px] bg-white border border-[#E8E5E0] rounded-2xl overflow-hidden shadow-md p-3.5 space-y-3">
+          <div
+            className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden flex items-center justify-center shadow-inner cursor-pointer group"
+            onClick={togglePlay}
+          >
             {videoUrl ? (
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                poster={
-                  generation.outputThumbnailUrl
-                    ? studioService.resolveMediaUrl(generation.outputThumbnailUrl)
-                    : undefined
-                }
-                controls
-                autoPlay
-                playsInline
-                loop
-                className="w-full h-full object-contain"
-              >
-                Trình duyệt của bạn không hỗ trợ phát video HTML5.
-              </video>
+              <>
+                <video
+                  key={videoUrl}
+                  ref={videoRef}
+                  src={videoUrl}
+                  poster={
+                    generation.outputThumbnailUrl
+                      ? studioService.resolveMediaUrl(generation.outputThumbnailUrl)
+                      : undefined
+                  }
+                  controls
+                  playsInline
+                  loop
+                  preload="auto"
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  className="w-full h-full object-contain"
+                >
+                  Trình duyệt của bạn không hỗ trợ phát video HTML5.
+                </video>
+
+                {/* Big Center Play Button when paused */}
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                    <div className="w-16 h-16 rounded-full bg-white/90 text-[#242321] flex items-center justify-center shadow-xl transform group-hover:scale-105 transition-transform">
+                      <Play className="w-8 h-8 ml-1 text-[#654B7B] fill-current" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Mute/Unmute Overlay Button */}
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="absolute bottom-14 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors z-10"
+                  aria-label={isMuted ? 'Bật tiếng' : 'Tắt tiếng'}
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-4 h-4" />
+                  ) : (
+                    <Volume2 className="w-4 h-4" />
+                  )}
+                </button>
+              </>
             ) : (
               <div className="text-center p-6 text-slate-400 space-y-2">
                 <Film className="w-10 h-10 mx-auto text-slate-600" />
@@ -117,7 +179,7 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
 
           {videoUrl && (
             <div className="pt-1 flex justify-between items-center text-xs text-slate-500 px-1">
-              <span className="font-mono text-[11px] text-slate-600 truncate max-w-[220px]">
+              <span className="font-mono text-[11px] text-slate-600 truncate max-w-[200px]">
                 {generation.outputVideoAssetId || generation.generationId}
               </span>
               <a
@@ -131,37 +193,6 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
                 Tải file video
               </a>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Pinned Bottom Navigation */}
-      <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between gap-4">
-          <Button
-            variant="secondary"
-            onClick={onCreateNewVersion}
-            className="gap-2 text-xs"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Làm lại video khác
-          </Button>
-
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            Dự án đã lưu: <span className="font-bold text-slate-900">{generation.projectName}</span>
-          </div>
-
-          {onProceedToProducts && (
-            <Button
-              variant="primary"
-              onClick={onProceedToProducts}
-              className="gap-2 shadow-sm font-semibold px-6 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white text-sm"
-            >
-              <Package className="w-4 h-4" />
-              <span>Tiếp tục: Sang bước 6 (Nhập sản phẩm)</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
           )}
         </div>
       </div>

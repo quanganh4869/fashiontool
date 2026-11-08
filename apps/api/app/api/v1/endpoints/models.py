@@ -51,45 +51,8 @@ def _save_models() -> None:
 
 
 def _seed_initial_model_if_empty() -> None:
-    if not _MODELS_DB:
-        now = _now_iso()
-        default_model = {
-            "model_id": "mod-linh-01",
-            "model_code": "MOD-000101",
-            "display_name": "Linh - Phong cách đường phố",
-            "description": "Người mẫu nữ phong cách hiện đại, phù hợp trang phục streetwear, casual và dự tiệc.",
-            "status": ModelStatus.READY.value,
-            "created_at": now,
-            "updated_at": now,
-            "cover_asset_id": "ast-linh-front",
-            "reference_assets": [
-                {
-                    "asset_id": "ast-linh-front",
-                    "model_id": "mod-linh-01",
-                    "original_filename": "front.jpg",
-                    "mime_type": "image/jpeg",
-                    "file_size_bytes": 6938,
-                    "storage_path": "templates/users/usr-system-default/models/mod-test/photos/front.jpg",
-                    "view_url": "/api/v1/assets/ast-linh-front/view",
-                    "thumbnail_url": "/api/v1/assets/ast-linh-front/view",
-                    "order_index": 0,
-                    "is_cover": True,
-                    "created_at": now,
-                    "orientation": "front",
-                    "sort_order": 0,
-                    "quality_score": 95.0,
-                    "validation_status": "VALID",
-                }
-            ],
-            "used_in_projects_count": 0,
-        }
-        _MODELS_DB["mod-linh-01"] = default_model
-        register_asset_metadata({
-            "asset_id": "ast-linh-front",
-            "storage_path": "templates/users/usr-system-default/models/mod-test/photos/front.jpg",
-            "mime_type": "image/jpeg",
-        })
-        _save_models()
+    # Do not auto-seed mock models when database is empty
+    return
 
 
 def _load_models() -> None:

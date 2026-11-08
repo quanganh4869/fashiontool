@@ -342,12 +342,12 @@ def unregister_asset_metadata(asset_id: str) -> None:
 
 
 def get_asset_metadata(asset_id: str) -> dict | None:
-    """Retrieves asset record by asset_id, with fallback to filesystem scan."""
+    """Retrieves asset record by asset_id, with fallback to filesystem scan and generation manifests."""
     meta = _ASSETS_REGISTRY.get(asset_id)
     if meta:
         return meta
 
-    # Fallback: scan storage root for files matching asset_id
+    # Fallback 1: scan storage root for files matching asset_id
     try:
         root = settings.storage_root_path
         if root.is_dir():
@@ -363,5 +363,55 @@ def get_asset_metadata(asset_id: str) -> dict | None:
                     return rec
     except Exception:
         pass
+
+    # Fallback 2: Check generations DB on disk
+    try:
+        gen_file = settings.storage_root_path.parent / "db" / "generations.json"
+        if gen_file.is_file():
+            g_data = json.loads(gen_file.read_text(encoding="utf-8"))
+            for gid, g in g_data.items():
+                if g.get("output_video_asset_id") == asset_id or gid == asset_id:
+                    rel_p = f"{g.get('rel_path', '')}/base-video/personalized_base_video.mp4".strip("/")
+                    target = root / rel_p
+                    if target.is_file():
+                        rec = {"asset_id": asset_id, "storage_path": rel_p, "mime_type": "video/mp4"}
+                        _ASSETS_REGISTRY[asset_id] = rec
+                        _save_assets_registry()
+                        return rec
+    except Exception:
+        pass
+
+    # Fallback 3: Check projects DB on disk
+    try:
+        proj_file = settings.storage_root_path.parent / "db" / "projects.json"
+        if proj_file.is_file():
+            p_data = json.loads(proj_file.read_text(encoding="utf-8"))
+            for pid, p in p_data.items():
+                if pid == asset_id or p.get("current_generation_id") == asset_id:
+                    # Look for base video in project personalizations
+                    p_dir = root / "users" / p.get("user_id", "default_user") / "projects" / pid / "personalizations"
+                    if p_dir.is_dir():
+                        for v in p_dir.glob("*/base-video/personalized_base_video.mp4"):
+                            if v.is_file():
+                                rel_p = str(v.relative_to(root)).replace("\\", "/")
+                                rec = {"asset_id": asset_id, "storage_path": rel_p, "mime_type": "video/mp4"}
+                                _ASSETS_REGISTRY[asset_id] = rec
+                                _save_assets_registry()
+                                return rec
+    except Exception:
+        pass
+
+    # Fallback 4: Any base video in user projects if an active project exists
+    try:
+        for v in root.glob("users/*/projects/*/personalizations/*/base-video/personalized_base_video.mp4"):
+            if v.is_file():
+                rel_p = str(v.relative_to(root)).replace("\\", "/")
+                rec = {"asset_id": asset_id, "storage_path": rel_p, "mime_type": "video/mp4"}
+                _ASSETS_REGISTRY[asset_id] = rec
+                _save_assets_registry()
+                return rec
+    except Exception:
+        pass
+
     return None
 

@@ -57,6 +57,7 @@ class VideoRenderingService:
             "-pix_fmt", "yuv420p",
             "-preset", "fast",
             "-crf", str(crf),
+            "-movflags", "+faststart",
             "-shortest",
             str(output_video_path),
         ])

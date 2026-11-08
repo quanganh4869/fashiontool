@@ -33,13 +33,14 @@ from app.services.garment_engine.pipeline import (
     _REPLACEMENT_JOBS_DB,
     _save_jobs_db,
 )
+from app.core.config import settings
 from app.services.personalization import _GENERATIONS_DB, _PROJECTS_DB
 from app.services.product_extraction import _PRODUCT_ASSETS_DB
 from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
 
-_BATCH_DB_PATH = Path("data/db/batch_production_groups.json")
+_BATCH_DB_PATH = settings.storage_root_path.parent / "db" / "batch_production_groups.json"
 _BATCH_GROUPS_DB: dict[str, dict[str, Any]] = {}
 _IDEMPOTENCY_CACHE: dict[str, str] = {}  # idempotency_key -> batch_id
 

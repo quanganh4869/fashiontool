@@ -692,8 +692,35 @@ class PersonalizationService:
         """
         ffmpeg_bin = settings.FFMPEG_PATH
 
-        # If model photo exists, build a 9:16 portrait video with subtle Ken-Burns zoom
-        if model_photo_path and model_photo_path.is_file():
+        # Priority 1: If source template video exists, transcode with normalized audio & faststart
+        if source_video_path and source_video_path.is_file():
+            cmd = [
+                ffmpeg_bin,
+                "-y",
+                "-i",
+                str(source_video_path),
+                "-t",
+                str(duration_seconds),
+                "-map",
+                "0:v:0",
+                "-map",
+                "0:a:0?",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-preset",
+                "fast",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "128k",
+                "-movflags",
+                "+faststart",
+                str(output_video_path),
+            ]
+        elif model_photo_path and model_photo_path.is_file():
+            # Build a 9:16 portrait video from model reference photo
             cmd = [
                 ffmpeg_bin,
                 "-y",
@@ -719,23 +746,8 @@ class PersonalizationService:
                 "yuv420p",
                 "-preset",
                 "fast",
-                str(output_video_path),
-            ]
-        elif source_video_path and source_video_path.is_file():
-            # Copy/transcode source template video
-            cmd = [
-                ffmpeg_bin,
-                "-y",
-                "-i",
-                str(source_video_path),
-                "-t",
-                str(duration_seconds),
-                "-c:v",
-                "libx264",
-                "-pix_fmt",
-                "yuv420p",
-                "-preset",
-                "fast",
+                "-movflags",
+                "+faststart",
                 str(output_video_path),
             ]
         else:
@@ -757,6 +769,8 @@ class PersonalizationService:
                 "yuv420p",
                 "-preset",
                 "fast",
+                "-movflags",
+                "+faststart",
                 str(output_video_path),
             ]
 

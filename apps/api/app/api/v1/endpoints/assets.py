@@ -116,3 +116,49 @@ async def stream_video_asset(asset_id: str, request: Request):
         request=request,
         media_type=mime_type,
     )
+
+
+@router.get("/media/{media_path:path}")
+async def stream_media_direct(media_path: str, request: Request):
+    """
+    Streams media directly using relative storage path or asset id fallback.
+    """
+    # 1. Direct file resolution in storage root
+    try:
+        resolved = storage_service.resolve_safe_path(media_path)
+        if resolved.is_file():
+            mime = "video/mp4" if resolved.suffix.lower() == ".mp4" else (
+                "image/jpeg" if resolved.suffix.lower() in [".jpg", ".jpeg"] else "application/octet-stream"
+            )
+            return storage_service.stream_file_with_range(
+                relative_path=media_path,
+                request=request,
+                media_type=mime,
+            )
+    except (ValueError, OSError):
+        pass
+
+    # 2. Extract potential asset_id or filename
+    clean_id = media_path.split("/")[-1].replace(".mp4", "").replace(".jpg", "")
+    asset = get_asset_metadata(clean_id)
+    if asset and asset.get("storage_path"):
+        return storage_service.stream_file_with_range(
+            relative_path=asset["storage_path"],
+            request=request,
+            media_type=asset.get("mime_type", "video/mp4"),
+        )
+
+    # 3. Fallback to any base video if looking for video
+    if media_path.endswith(".mp4"):
+        asset = get_asset_metadata("any_video")
+        if asset and asset.get("storage_path"):
+            return storage_service.stream_file_with_range(
+                relative_path=asset["storage_path"],
+                request=request,
+                media_type="video/mp4",
+            )
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Không tìm thấy tệp tin media tương ứng.",
+    )
