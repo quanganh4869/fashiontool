@@ -264,8 +264,8 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
         </div>
       )}
 
-      {/* Footer Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+      {/* Sticky Footer Navigation */}
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border border-[#E8E5E0] p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] rounded-xl flex items-center justify-between">
         <Button variant="secondary" onClick={onBack} className="gap-2">
           <ArrowLeft className="w-4 h-4" />
           Quay lại: Chọn người mẫu
@@ -277,7 +277,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
               Đã chọn: <span className="font-semibold text-slate-900">{selectedTemplate.title}</span>
             </p>
           ) : (
-            <p className="text-xs text-amber-600 font-medium hidden sm:block">
+            <p className="text-xs text-amber-700 font-medium hidden sm:block">
               Vui lòng chọn một video mẫu
             </p>
           )}
@@ -286,7 +286,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
             variant="primary"
             onClick={onNext}
             disabled={!selectedTemplate}
-            className="gap-2"
+            className="gap-2 shadow-sm"
           >
             Tiếp tục: Kiểm tra tương thích
             <ArrowRight className="w-4 h-4" />

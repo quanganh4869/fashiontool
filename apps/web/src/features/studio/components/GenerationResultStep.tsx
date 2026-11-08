@@ -176,6 +176,30 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
           <QualityReviewReportCard report={generation.qualityReview} />
         </div>
       </div>
+
+      {/* Sticky Bottom Actions */}
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border border-[#E8E5E0] p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] rounded-xl flex items-center justify-between">
+        <Button
+          variant="secondary"
+          onClick={onCreateNewVersion}
+          className="gap-2"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Tạo phiên bản mới
+        </Button>
+
+        {onProceedToProducts && (
+          <Button
+            variant="primary"
+            onClick={onProceedToProducts}
+            className="gap-2 shadow-sm"
+          >
+            <Package className="w-4 h-4" />
+            <span>Tiếp tục: Nhập sản phẩm</span>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

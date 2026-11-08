@@ -59,12 +59,14 @@ export const StudioPage: React.FC = () => {
         activeProjectName={activeProjectName}
       />
 
-      {/* Stepper Navigation */}
-      <StudioStepper
-        currentStep={step}
-        onStepClick={(targetStep) => setStep(targetStep)}
-        canNavigateToStep={canNavigateToStep}
-      />
+      {/* Stepper Navigation - Fixed Sticky at Top */}
+      <div className="sticky top-16 z-20 bg-[#F6F5F2]/95 backdrop-blur-md pt-1 pb-3 -mt-2">
+        <StudioStepper
+          currentStep={step}
+          onStepClick={(targetStep) => setStep(targetStep)}
+          canNavigateToStep={canNavigateToStep}
+        />
+      </div>
 
       {/* Main Step Body */}
       <div className="pt-2">

@@ -211,8 +211,8 @@ export const ModelPhotoStep: React.FC<ModelPhotoStepProps> = ({
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="pt-6 border-t border-[#E8E5E0] flex items-center justify-between">
+      {/* Action Buttons - Sticky at Bottom */}
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md pt-4 pb-2 border-t border-[#E8E5E0] -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-6 sm:px-7 rounded-b-xl flex items-center justify-between shadow-[0_-4px_16px_rgba(0,0,0,0.06)]">
         <Button
           type="button"
           variant="secondary"
@@ -229,7 +229,7 @@ export const ModelPhotoStep: React.FC<ModelPhotoStepProps> = ({
           onClick={handleContinue}
           isLoading={isSaving}
           disabled={!isContinueEnabled || isSaving}
-          className="text-xs font-medium px-5"
+          className="text-xs font-medium px-5 shadow-sm"
         >
           Lưu và tiếp tục
         </Button>

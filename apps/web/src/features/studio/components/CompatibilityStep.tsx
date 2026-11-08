@@ -301,8 +301,8 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
         </div>
       </div>
 
-      {/* Footer Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+      {/* Sticky Footer Navigation */}
+      <div className="sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border border-[#E8E5E0] p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] rounded-xl flex items-center justify-between">
         <Button variant="secondary" onClick={onBack} className="gap-2">
           <ArrowLeft className="w-4 h-4" />
           Quay lại: Chọn video mẫu
@@ -312,7 +312,7 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
           variant="primary"
           onClick={() => onStartGeneration(projectName, confirmedLimitations)}
           disabled={!canGenerate || isCreating}
-          className="gap-2"
+          className="gap-2 shadow-sm"
         >
           {isCreating ? (
             <>
