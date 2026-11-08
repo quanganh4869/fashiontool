@@ -31,7 +31,7 @@ class TemporalConsistencyService:
                 # Temporal exponential smoothing
                 smoothed = cv2.addWeighted(curr, alpha, prev_frame, 1.0 - alpha, 0)
 
-            out_path = output_dir / f_path.name
+            out_path = output_dir / f"frame_{idx:04d}.jpg"
             cv2.imwrite(str(out_path), smoothed)
             smoothed_paths.append(out_path)
             prev_frame = smoothed

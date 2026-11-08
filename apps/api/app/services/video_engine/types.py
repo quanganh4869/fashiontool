@@ -8,6 +8,7 @@ class Keypoint:
     x: float  # Normalized [0, 1]
     y: float  # Normalized [0, 1]
     confidence: float
+    visibility: bool = True
 
 
 @dataclass
@@ -18,6 +19,8 @@ class PoseFrame:
     body_orientation: str  # front, three_quarter_left, three_quarter_right, profile_left, profile_right, back
     movement_vector: tuple[float, float]  # (dx, dy)
     gesture: str  # walking, turning, posing, stationary
+    detected: bool = True
+    confidence: float = 1.0
 
 
 @dataclass

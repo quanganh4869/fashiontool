@@ -1,16 +1,21 @@
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from .frame_extraction import FrameExtractionService
-from .scene_analysis import SceneAnalysisService
-from .pose_estimation import PoseEstimationService
-from .segmentation import SegmentationService
-from .motion_data import MotionDataService
-from .model_identity import ModelIdentityService
+from .compositing import CompositingService
 from .frame_composition import FrameCompositionService
-from .temporal_consistency import TemporalConsistencyService
+from .frame_extraction import FrameExtractionService
+from .model_identity import ModelIdentityService
+from .model_runtime import ModelRuntimeManager
+from .motion_data import MotionDataService
+from .motion_retargeting import MotionRetargetingService
+from .person_tracking import PersonTrackingService
+from .pose_estimation import PoseEstimationService
 from .rendering import VideoRenderingService
+from .scene_analysis import SceneAnalysisService
+from .segmentation import SegmentationService
+from .temporal_consistency import TemporalConsistencyService
 from .types import VideoAnalysisArtifacts
 
 logger = logging.getLogger(__name__)
@@ -23,13 +28,17 @@ class VideoEngine:
     """
 
     def __init__(self):
+        self.model_runtime = ModelRuntimeManager()
         self.frame_extractor = FrameExtractionService()
         self.scene_analyzer = SceneAnalysisService()
+        self.person_tracker = PersonTrackingService()
         self.pose_estimator = PoseEstimationService()
         self.segmenter = SegmentationService()
         self.motion_data = MotionDataService()
+        self.motion_retargeter = MotionRetargetingService()
         self.model_identity = ModelIdentityService()
         self.frame_compositor = FrameCompositionService()
+        self.compositor = CompositingService()
         self.temporal_smoother = TemporalConsistencyService()
         self.renderer = VideoRenderingService()
 
@@ -42,7 +51,8 @@ class VideoEngine:
     ) -> VideoAnalysisArtifacts:
         """
         Executes complete local video analysis:
-        Decoding -> Frame extraction -> Scene transitions -> Pose estimation -> Skeletons -> Garment Slots.
+        Decoding -> Frame extraction -> Scene transitions -> Pose estimation ->
+        Person tracking -> Motion retargeting -> Skeletons -> Garment Slots.
         """
         logger.info("Starting local Video Analysis Engine for template: %s", template_id)
 
@@ -71,7 +81,19 @@ class VideoEngine:
             output_skeletons_dir=skeletons_dir,
         )
 
-        # 5. Segmentation & Garment Slots
+        # 5. Continuous Person Tracking
+        tracking_artifacts = self.person_tracker.track_subject(
+            frame_records=frame_records,
+            pose_sequence=pose_sequence,
+        )
+
+        # 6. Motion Representation & Geometric Retargeting
+        motion_rep = self.motion_retargeter.build_motion_representation(
+            pose_sequence=pose_sequence,
+            target_model_scale=1.0,
+        )
+
+        # 7. Segmentation & Garment Slots
         garment_slots = self.segmenter.segment_frames(
             frame_records=frame_records,
             pose_sequence=pose_sequence,
@@ -101,11 +123,32 @@ class VideoEngine:
                 "scenes_detected": len(scenes),
                 "poses_computed": len(pose_sequence),
                 "slots_identified": len(garment_slots),
+                "tracking_ratio": tracking_artifacts.continuous_tracking_ratio,
+                "hardware_device": self.model_runtime.device,
             },
         )
 
-        # 6. Save persistent artifacts
+        # 8. Save persistent artifacts
         self.motion_data.save_artifacts(artifacts, analysis_root_dir)
+        self.motion_data.save_tracking_artifacts(
+            {
+                "primary_tracking_id": tracking_artifacts.primary_tracking_id,
+                "total_frames": tracking_artifacts.total_frames,
+                "continuous_tracking_ratio": tracking_artifacts.continuous_tracking_ratio,
+                "occlusion_intervals": tracking_artifacts.occlusion_intervals,
+            },
+            analysis_root_dir,
+        )
+        self.motion_data.save_motion_representation(
+            {
+                "total_frames": motion_rep.total_frames,
+                "average_aspect_ratio": motion_rep.average_aspect_ratio,
+                "normalized_frames": [asdict(nf) for nf in motion_rep.normalized_frames],
+            },
+            analysis_root_dir,
+        )
+
+        self.model_runtime.cleanup_memory()
         logger.info("Video Analysis completed successfully for %s", template_id)
         return artifacts
 
@@ -120,27 +163,31 @@ class VideoEngine:
     ) -> Path:
         """
         Executes complete local Model Personalization:
-        Identity Extraction -> Driving Pose Retargeting -> Frame Composition -> Temporal Smoothing -> Media Rendering.
+        Identity Extraction -> Driving Pose Retargeting -> Frame Composition ->
+        Layered Compositing -> Temporal Smoothing -> Media Rendering -> Contact Sheet.
         """
         logger.info("Starting local Model Personalization Engine for generation: %s", generation_id)
 
         raw_frames_dir = output_dir / "intermediate" / "raw_composed"
+        composited_dir = output_dir / "intermediate" / "composited"
         smoothed_dir = output_dir / "intermediate" / "smoothed"
         output_video_path = output_dir / "base-video" / "personalized_base_video.mp4"
         output_thumb_path = output_dir / "base-video" / "thumbnail.jpg"
+        output_sheet_path = output_dir / "base-video" / "contact_sheet.jpg"
 
         raw_frames_dir.mkdir(parents=True, exist_ok=True)
+        composited_dir.mkdir(parents=True, exist_ok=True)
         smoothed_dir.mkdir(parents=True, exist_ok=True)
         output_video_path.parent.mkdir(parents=True, exist_ok=True)
 
         # 1. Extract Model Identity
         if progress_callback:
-            progress_callback(30, "Trích xuất đặc điểm nhân dạng người mẫu từ ảnh tham chiếu")
+            progress_callback(25, "Trích xuất đặc điểm nhân dạng người mẫu từ ảnh tham chiếu")
         identity_data = self.model_identity.extract_identity(model_photo_paths)
 
         # 2. Load Driving Motion Artifacts
         if progress_callback:
-            progress_callback(45, "Nạp chuỗi tư thế chuyển động và mặt nạ phân vùng")
+            progress_callback(40, "Nạp chuỗi tư thế chuyển động và mặt nạ phân vùng")
         artifacts_data = self.motion_data.load_artifacts(template_analysis_dir)
         poses = artifacts_data["pose_sequence"]
         meta = artifacts_data["metadata"]
@@ -153,7 +200,7 @@ class VideoEngine:
 
         # 3. Identity-conditioned Frame Composition
         if progress_callback:
-            progress_callback(60, "Tổng hợp khung hình: Ghép người mẫu vào chuyển động video mẫu")
+            progress_callback(55, "Tổng hợp khung hình: Ghép người mẫu vào chuyển động video mẫu")
 
         composed_frame_paths: list[Path] = []
         for idx, src_frame in enumerate(source_frame_files):
@@ -179,16 +226,25 @@ class VideoEngine:
             )
             composed_frame_paths.append(out_f)
 
-        # 4. Temporal Consistency Smoothing
+        # 4. Layered Compositing & Background Preservation
         if progress_callback:
-            progress_callback(80, "Áp dụng lọc mượt chuyển động và ổn định nhất quán khung hình (Temporal Smoothing)")
+            progress_callback(70, "Bảo toàn bối cảnh nền và xử lý hòa trộn đa tầng (Layered Compositing)")
+        composited_frame_paths = self.compositor.composite_frame_sequence(
+            source_frame_paths=source_frame_files,
+            synthesized_frame_paths=composed_frame_paths,
+            output_dir=composited_dir,
+        )
+
+        # 5. Temporal Consistency Smoothing
+        if progress_callback:
+            progress_callback(85, "Áp dụng lọc mượt chuyển động và ổn định nhất quán khung hình (Temporal Smoothing)")
         smoothed_frame_paths = self.temporal_smoother.smooth_frames(
-            frame_paths=composed_frame_paths,
+            frame_paths=composited_frame_paths or composed_frame_paths,
             output_dir=smoothed_dir,
             alpha=0.88,
         )
 
-        # 5. Final Video Assembly with FFmpeg
+        # 6. Final Video Assembly with FFmpeg
         if progress_callback:
             progress_callback(92, "Lắp ráp chuỗi khung hình, đồng bộ âm thanh gốc và đóng gói MP4")
         self.renderer.render_video_from_frames(
@@ -200,9 +256,11 @@ class VideoEngine:
             height=meta.get("height", 1920),
         )
 
-        # Extract representative thumbnail
+        # 7. Extract representative thumbnail and Contact Sheet
         self.frame_extractor.extract_poster(output_video_path, output_thumb_path)
+        self.renderer.generate_contact_sheet(output_video_path, output_sheet_path)
 
+        self.model_runtime.cleanup_memory()
         logger.info("Model Personalization completed: %s", output_video_path)
         return output_video_path
 

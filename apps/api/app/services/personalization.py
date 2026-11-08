@@ -521,6 +521,23 @@ class PersonalizationService:
                 }
             )
 
+            # Register contact sheet if generated
+            sheet_file = base_video_dir / "contact_sheet.jpg"
+            if sheet_file.is_file():
+                sheet_asset_id = str(uuid.uuid4())
+                rel_sheet_path = f"{record['rel_path']}/base-video/contact_sheet.jpg"
+                register_asset_metadata(
+                    {
+                        "asset_id": sheet_asset_id,
+                        "storage_path": rel_sheet_path,
+                        "mime_type": "image/jpeg",
+                    }
+                )
+                record["output_contact_sheet_url"] = f"/api/v1/assets/{sheet_asset_id}/view"
+
+            if out_video_file.is_file():
+                record["output_video_sha256"] = local_video_engine.renderer.get_file_sha256(out_video_file)
+
             record["status"] = GenerationStatus.COMPLETED.value
             record["current_step"] = "Đã hoàn thành cá nhân hóa video nền"
             record["progress"] = 100

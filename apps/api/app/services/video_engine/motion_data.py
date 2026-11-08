@@ -56,6 +56,16 @@ class MotionDataService:
             json.dumps(artifacts.diagnostics, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
+    def save_tracking_artifacts(self, tracking_data: dict, target_dir: Path) -> None:
+        (target_dir / "tracking.json").write_text(
+            json.dumps(tracking_data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def save_motion_representation(self, motion_data: dict, target_dir: Path) -> None:
+        (target_dir / "motion_representation.json").write_text(
+            json.dumps(motion_data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
     def load_artifacts(self, target_dir: Path) -> dict:
         if not target_dir.is_dir():
             raise FileNotFoundError(f"Analysis directory not found: {target_dir}")
@@ -65,6 +75,8 @@ class MotionDataService:
         poses = json.loads((target_dir / "pose_sequence.json").read_text(encoding="utf-8"))
         slots = json.loads((target_dir / "garment_slots.json").read_text(encoding="utf-8"))
         diag = json.loads((target_dir / "diagnostics.json").read_text(encoding="utf-8")) if (target_dir / "diagnostics.json").exists() else {}
+        tracking = json.loads((target_dir / "tracking.json").read_text(encoding="utf-8")) if (target_dir / "tracking.json").exists() else {}
+        motion_rep = json.loads((target_dir / "motion_representation.json").read_text(encoding="utf-8")) if (target_dir / "motion_representation.json").exists() else {}
 
         return {
             "metadata": meta,
@@ -72,4 +84,6 @@ class MotionDataService:
             "pose_sequence": poses,
             "garment_slots": slots,
             "diagnostics": diag,
+            "tracking": tracking,
+            "motion_representation": motion_rep,
         }

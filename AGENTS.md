@@ -230,3 +230,11 @@ data/
 │   └── temp/
 │       └── {job_id}/
 └── .gitkeep  (optional; do not store user media here)
+
+---
+
+## 11.2. NGUYÊN TẮC BẮT BUỘC — LOCAL VIDEO PROCESSING & ZERO CLOUD AI
+
+1. **Toàn quyền kiểm soát xử lý video bởi Backend nội bộ**: Toàn bộ quá trình giải mã frame, phân tích cảnh (scene detection), phát hiện và theo dõi người (person tracking), ước lượng tư thế 17 khớp (pose estimation), phân vùng trang phục (segmentation), điều chỉnh chuyển động (motion retargeting), ghép người mẫu (compositing), khử rung giật (temporal smoothing) và render video MP4 phải do Backend nội bộ thực thi.
+2. **Tuyệt đối không gọi AI API bên ngoài**: Không gửi ảnh người mẫu, video template, frame hay pose data tới bất kỳ dịch vụ AI tạo ảnh, tạo video hoặc hosted inference đám mây nào (OpenAI, Gemini, Runway, Kling, Replicate, fal.ai,...).
+3. **Thực thi bằng Local Weights & Local Runtime**: Toàn bộ model chạy bằng local runtime (PyTorch, ONNX Runtime, OpenCV, FFmpeg) trên CPU/GPU của máy chủ Backend với weights được lưu trữ tại `data/models/`.

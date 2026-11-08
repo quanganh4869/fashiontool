@@ -70,7 +70,12 @@ data/db/*
 !data/db/.gitkeep
 data/temp/*
 !data/temp/.gitkeep
+data/models/*.pth
+data/models/*.pt
+data/models/*.onnx
+data/models/*.bin
 apps/data/
+apps/api/data/
 *.db
 *.sqlite
 *.sqlite3
