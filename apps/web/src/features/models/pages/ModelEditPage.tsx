@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/useToast';
 import { useModelDetail } from '../hooks/useModelDetail';
 import { useModelUpload } from '../hooks/useModelUpload';
 import { modelManagementService } from '../services/model-management.service';
-import { validateModelName, validateModelDescription } from '../schemas/model-management.schemas';
+import { validateModelName } from '../schemas/model-management.schemas';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -22,9 +22,7 @@ export const ModelEditPage: React.FC = () => {
   const { model, setModel, isLoading, error, reload } = useModelDetail(modelId);
 
   const [displayName, setDisplayName] = useState('');
-  const [description, setDescription] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
-  const [descError, setDescError] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [hasFormChanges, setHasFormChanges] = useState(false);
@@ -33,7 +31,6 @@ export const ModelEditPage: React.FC = () => {
   useEffect(() => {
     if (model) {
       setDisplayName(model.displayName);
-      setDescription(model.description || '');
     }
   }, [model]);
 
@@ -54,12 +51,6 @@ export const ModelEditPage: React.FC = () => {
     setDisplayName(val);
     setHasFormChanges(true);
     if (nameError) setNameError(null);
-  };
-
-  const handleDescChange = (val: string) => {
-    setDescription(val);
-    setHasFormChanges(true);
-    if (descError) setDescError(null);
   };
 
   const handleSetCover = async (assetId: string) => {
@@ -132,17 +123,10 @@ export const ModelEditPage: React.FC = () => {
       return;
     }
 
-    const descValidation = validateModelDescription(description);
-    if (!descValidation.isValid) {
-      setDescError(descValidation.error || 'Mô tả không hợp lệ.');
-      return;
-    }
-
     setIsSaving(true);
     try {
       await modelManagementService.updateModel(modelId, {
         displayName: displayName.trim(),
-        description: description.trim(),
       });
       showToast('Đã cập nhật hồ sơ người mẫu', 'success');
       setHasFormChanges(false);
@@ -238,26 +222,6 @@ export const ModelEditPage: React.FC = () => {
             {nameError && (
               <p className="text-xs text-[#A94442] font-medium mt-0.5">{nameError}</p>
             )}
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label htmlFor="edit-desc" className="text-sm font-semibold text-[#242321]">
-                Mô tả hoặc ghi chú
-              </label>
-              <span className="text-xs text-[#74716D] tabular-nums">
-                {description.length} / 500
-              </span>
-            </div>
-            <textarea
-              id="edit-desc"
-              rows={3}
-              maxLength={500}
-              value={description}
-              onChange={(e) => handleDescChange(e.target.value)}
-              className="w-full p-3 text-sm text-[#242321] bg-white rounded-md border border-[#D8D4CE] focus:border-[#654B7B] focus:ring-2 focus:ring-[#654B7B]/20 transition-colors resize-none"
-            />
           </div>
 
           {/* Model Code (Readonly) */}

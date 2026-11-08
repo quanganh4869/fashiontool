@@ -9,6 +9,7 @@ import {
   Clock,
   Layers,
   AlertCircle,
+  UploadCloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -17,6 +18,7 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { TemplateSummary, TemplateCategory } from '@/features/library';
 import { templateService } from '@/features/library/services/template.service';
 import { TemplatePreviewDialog } from '@/features/library/components/TemplatePreviewDialog';
+import { TemplateUploadModal } from '@/features/library/components/TemplateUploadModal';
 
 interface TemplateSelectStepProps {
   templates: TemplateSummary[];
@@ -27,6 +29,7 @@ interface TemplateSelectStepProps {
   onNext: () => void;
   isLoading: boolean;
   error?: string | null;
+  onRefreshTemplates?: () => void;
 }
 
 export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
@@ -38,10 +41,12 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
   onNext,
   isLoading,
   error,
+  onRefreshTemplates,
 }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [previewingTemplate, setPreviewingTemplate] = useState<TemplateSummary | null>(null);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const filteredTemplates = templates.filter((t) => {
     const matchesSearch =
@@ -63,14 +68,25 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
           </p>
         </div>
 
-        <div className="w-full sm:w-72 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none z-10" />
-          <Input
-            placeholder="Tìm theo tiêu đề, danh mục..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <div className="w-full sm:w-64 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none z-10" />
+            <Input
+              placeholder="Tìm theo tiêu đề, danh mục..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setIsUploadOpen(true)}
+            className="flex-shrink-0"
+          >
+            <UploadCloud className="w-4 h-4 mr-1.5" />
+            Tải lên video mới
+          </Button>
         </div>
       </div>
 
@@ -282,6 +298,17 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
         template={previewingTemplate}
         isOpen={Boolean(previewingTemplate)}
         onClose={() => setPreviewingTemplate(null)}
+      />
+
+      <TemplateUploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={(newTemplate) => {
+          onSelectTemplate(newTemplate);
+          if (onRefreshTemplates) {
+            onRefreshTemplates();
+          }
+        }}
       />
     </div>
   );

@@ -176,6 +176,37 @@ export const templateService = {
   },
 
   /**
+   * Upload user-downloaded sample video (MP4/MOV) for local backend analysis
+   */
+  async uploadTemplate(
+    file: File,
+    title: string,
+    categoryId: string = 'cat-streetwear',
+    tags: string = '',
+    description: string = ''
+  ): Promise<TemplateDetail> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('title', title);
+    formData.append('category_id', categoryId);
+    formData.append('tags', tags);
+    formData.append('description', description);
+
+    const raw = await apiClient<Record<string, unknown>>('/templates/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    return mapDetail(raw);
+  },
+
+  /**
+   * Fetch backend local video analysis data (poses, skeletons, scenes, garment slots)
+   */
+  async getTemplateAnalysis(templateId: string): Promise<Record<string, unknown>> {
+    return apiClient<Record<string, unknown>>(`/templates/${templateId}/analysis`);
+  },
+
+  /**
    * Format display duration helper (milliseconds -> mm:ss or s)
    */
   formatDuration(durationMs: number): string {

@@ -1,4 +1,13 @@
-from fastapi import APIRouter, HTTPException, Query, Request, status
+import json
+import logging
+import shutil
+import uuid
+from dataclasses import asdict
+from datetime import UTC, datetime
+from pathlib import Path
+
+from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.schemas.templates import (
     AssessmentStatus,
@@ -14,6 +23,9 @@ from app.schemas.templates import (
     ToggleFavoriteResponse,
 )
 from app.services.storage import storage_service
+from app.services.video_engine import local_video_engine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/templates", tags=["Video Templates"])
 
@@ -30,6 +42,8 @@ _CATEGORIES = [
     {"id": "lifestyle", "name": "Lifestyle"},
     {"id": "closeup_product", "name": "Close-up Product"},
 ]
+
+_CUSTOM_TEMPLATES_FILE = Path("data/db/custom_templates.json")
 
 # Published Video Templates Catalog
 _TEMPLATES_CATALOG: dict[str, dict] = {
@@ -830,3 +844,190 @@ async def stream_template_video(template_id: str, request: Request):
         request=request,
         media_type="video/mp4",
     )
+
+
+def _load_custom_templates() -> None:
+    if _CUSTOM_TEMPLATES_FILE.is_file():
+        try:
+            items = json.loads(_CUSTOM_TEMPLATES_FILE.read_text(encoding="utf-8"))
+            for item in items:
+                _TEMPLATES_CATALOG[item["template_id"]] = item
+        except Exception as e:
+            logger.warning("Could not load custom templates: %s", e)
+
+
+def _save_custom_templates() -> None:
+    _CUSTOM_TEMPLATES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    custom_items = [t for t in _TEMPLATES_CATALOG.values() if t.get("is_custom")]
+    _CUSTOM_TEMPLATES_FILE.write_text(
+        json.dumps(custom_items, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+# Load custom templates at module load
+_load_custom_templates()
+
+
+@router.post("/upload", response_model=TemplateDetailResponse, status_code=status.HTTP_201_CREATED)
+async def upload_custom_template(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    category_id: str = Form("fashion_walk"),
+    description: str = Form(""),
+):
+    """
+    Uploads a user-provided Video Template (MP4/MOV) and executes
+    the complete local Video Analysis Engine:
+    decoding -> frame extraction -> scene transition detection -> pose estimation -> garment slot mapping.
+    """
+    clean_title = title.strip()
+    if not clean_title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tên video mẫu không được để trống.",
+        )
+
+    # Validate file format
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".mp4", ".mov", ".m4v", ".webm"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chỉ hỗ trợ định dạng video MP4 hoặc MOV.",
+        )
+
+    template_id = f"vtp-custom-{uuid.uuid4().hex[:8]}"
+    template_code = f"CUST-{uuid.uuid4().hex[:6].upper()}"
+
+    # Target source storage path
+    rel_source_path = f"templates/{template_id}/versions/v1/source/source{ext}"
+    abs_source_path = storage_service.resolve_safe_path(rel_source_path)
+    abs_source_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Save uploaded bytes to local filesystem
+    try:
+        with open(abs_source_path, "wb") as f_out:
+            shutil.copyfileobj(file.file, f_out)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lưu trữ file video: {e}",
+        )
+
+    # Run complete local Video Analysis Engine
+    analysis_root = storage_service.resolve_safe_path(f"templates/{template_id}/analysis")
+    try:
+        artifacts = local_video_engine.analyze_template_video(
+            template_id=template_id,
+            video_path=abs_source_path,
+            analysis_root_dir=analysis_root,
+        )
+    except Exception as e:
+        logger.exception("Video analysis failed for uploaded template %s", template_id)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Không thể phân tích cấu trúc video mẫu: {e}",
+        )
+
+    category_name = next((c["name"] for c in _CATEGORIES if c["id"] == category_id), "Fashion Walk")
+    now_iso = datetime.now(UTC).isoformat()
+
+    template_record = {
+        "template_id": template_id,
+        "template_code": template_code,
+        "title": clean_title,
+        "description": description.strip() or f"Video mẫu do người dùng tải lên - {artifacts.total_frames} khung hình.",
+        "category_id": category_id,
+        "category_name": category_name,
+        "tags": ["custom", "user-upload", artifacts.aspect_ratio],
+        "source_storage_path": rel_source_path,
+        "poster_url": f"/api/v1/templates/{template_id}/poster",
+        "preview_url": f"/api/v1/templates/{template_id}/stream",
+        "duration_ms": artifacts.duration_ms,
+        "width": artifacts.width,
+        "height": artifacts.height,
+        "aspect_ratio": artifacts.aspect_ratio,
+        "frame_rate": artifacts.frame_rate,
+        "video_codec": artifacts.diagnostics.get("video_codec", "h264"),
+        "audio_codec": "aac" if artifacts.diagnostics.get("has_audio") else None,
+        "template_version_id": "v1.0.0",
+        "status": TemplateStatus.PUBLISHED.value,
+        "usage_count": 0,
+        "is_custom": True,
+        "published_at": now_iso,
+        "updated_at": now_iso,
+        "scenes": [asdict(s) for s in artifacts.scenes],
+        "garment_slots": [
+            {
+                "slot_id": g.slot_id,
+                "template_id": template_id,
+                "slot_type": g.slot_type,
+                "slot_name": g.slot_name,
+                "assessment_status": g.assessment_status,
+                "bbox": g.bbox,
+                "confidence": g.confidence,
+            }
+            for g in artifacts.garment_slots
+        ],
+        "compatibility": {
+            "min_model_photos": 1,
+            "recommended_model_photos": 3,
+            "supported_orientations": ["front", "three_quarter_left", "three_quarter_right"],
+            "supported_motion_types": ["walking", "turning", "posing"],
+            "limitations": [],
+            "occlusion_risks": [],
+        },
+    }
+
+    _TEMPLATES_CATALOG[template_id] = template_record
+    _save_custom_templates()
+
+    return _build_detail(template_record)
+
+
+@router.get("/{template_id}/poster")
+async def get_template_poster(template_id: str):
+    """
+    Returns the poster frame extracted by the Video Analysis Engine.
+    """
+    rel_poster = f"templates/{template_id}/poster/poster.jpg"
+    try:
+        poster_path = storage_service.resolve_safe_path(rel_poster)
+        if poster_path.is_file():
+            return FileResponse(poster_path, media_type="image/jpeg")
+    except ValueError:
+        pass
+
+    # Fallback to catalog poster_url if external
+    t = _TEMPLATES_CATALOG.get(template_id)
+    if t and t.get("poster_url", "").startswith("http"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(t["poster_url"])
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy poster.")
+
+
+@router.get("/{template_id}/analysis")
+async def get_template_analysis(template_id: str):
+    """
+    Retrieves full persistent video analysis artifacts (scenes, pose sequence, garment slots).
+    """
+    analysis_dir = storage_service.resolve_safe_path(f"templates/{template_id}/analysis")
+    if not analysis_dir.is_dir():
+        # If pre-existing template without cached analysis, generate it on demand
+        t = _TEMPLATES_CATALOG.get(template_id)
+        if not t or not t.get("source_storage_path"):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chưa có dữ liệu phân tích.")
+
+        source_path = storage_service.resolve_safe_path(t["source_storage_path"])
+        if source_path.is_file():
+            local_video_engine.analyze_template_video(
+                template_id=template_id,
+                video_path=source_path,
+                analysis_root_dir=analysis_dir,
+            )
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chưa có file video nguồn để phân tích.")
+
+    from app.services.video_engine.motion_data import MotionDataService
+    motion_service = MotionDataService()
+    return motion_service.load_artifacts(analysis_dir)

@@ -58,12 +58,6 @@ export const ModelReviewStep: React.FC<ModelReviewStepProps> = ({
             {model.displayName}
           </h3>
           <p className="text-xs font-mono text-[#74716D] mt-0.5">{model.modelCode}</p>
-
-          {model.description && (
-            <p className="text-xs text-[#4B4945] mt-2 line-clamp-2 leading-relaxed">
-              {model.description}
-            </p>
-          )}
         </div>
       </div>
 
@@ -94,12 +88,6 @@ export const ModelReviewStep: React.FC<ModelReviewStepProps> = ({
               {model.modelCode}
             </p>
           </div>
-          {model.description && (
-            <div className="sm:col-span-2">
-              <span className="text-[#74716D]">Ghi chú:</span>
-              <p className="text-[#4B4945] mt-0.5 leading-relaxed">{model.description}</p>
-            </div>
-          )}
         </div>
       </div>
 

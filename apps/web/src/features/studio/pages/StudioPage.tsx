@@ -31,6 +31,7 @@ export const StudioPage: React.FC = () => {
     isCreatingGeneration,
     isCancelling,
     isRetrying,
+    loadCatalogs,
     evaluateCompatibility,
     handleSelectModel,
     handleSelectTemplate,
@@ -87,6 +88,7 @@ export const StudioPage: React.FC = () => {
             onNext={() => setStep('confirm')}
             isLoading={isLoadingCatalogs}
             error={catalogError}
+            onRefreshTemplates={loadCatalogs}
           />
         )}
 

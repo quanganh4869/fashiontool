@@ -62,15 +62,6 @@ export const ModelProfileInformation: React.FC<ModelProfileInformationProps> = (
               <span>Đã xác nhận quyền sử dụng hình ảnh</span>
             </div>
           </div>
-
-          {model.description && (
-            <div className="pt-2 border-t border-[#F2EDF5] flex flex-col gap-1">
-              <span className="text-[#74716D]">Ghi chú quản lý:</span>
-              <p className="text-[#242321] leading-relaxed bg-[#FAF9F7] p-2.5 rounded border border-[#E8E5E0]">
-                {model.description}
-              </p>
-            </div>
-          )}
         </div>
       </div>
 

@@ -5,8 +5,11 @@ import { TemplateSearchToolbar } from '../components/TemplateSearchToolbar';
 import { TemplateFilterToolbar } from '../components/TemplateFilterToolbar';
 import { TemplateGrid } from '../components/TemplateGrid';
 import { TemplatePreviewDialog } from '../components/TemplatePreviewDialog';
+import { TemplateUploadModal } from '../components/TemplateUploadModal';
 import { useTemplates } from '../hooks/useTemplates';
-import { TemplateSummary } from '../types/template.types';
+import { TemplateSummary, TemplateDetail } from '../types/template.types';
+import { Button } from '@/components/ui/Button';
+import { UploadCloud } from 'lucide-react';
 
 export const TemplateLibraryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,6 +41,7 @@ export const TemplateLibraryPage: React.FC = () => {
 
   // Preview Dialog State
   const [previewTemplate, setPreviewTemplate] = useState<TemplateSummary | null>(null);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const handleOpenPreview = (template: TemplateSummary) => {
     setPreviewTemplate(template);
@@ -57,7 +61,7 @@ export const TemplateLibraryPage: React.FC = () => {
       description="Khám phá các video thời trang mẫu để sử dụng cùng người mẫu của bạn."
       className="space-y-6"
     >
-      {/* Search Toolbar */}
+      {/* Search & Actions Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <TemplateSearchToolbar
           value={searchInput}
@@ -65,6 +69,14 @@ export const TemplateLibraryPage: React.FC = () => {
           onEnter={handleSearchImmediate}
           onClear={clearSearch}
         />
+        <Button
+          variant="primary"
+          onClick={() => setIsUploadOpen(true)}
+          className="flex-shrink-0"
+        >
+          <UploadCloud className="w-4 h-4 mr-2" />
+          Tải lên video mẫu
+        </Button>
       </div>
 
       {/* Filter & Sorting Controls */}
@@ -111,6 +123,16 @@ export const TemplateLibraryPage: React.FC = () => {
         isOpen={Boolean(previewTemplate)}
         onClose={handleClosePreview}
         onNavigateDetail={(id) => navigate(`/library/${id}`, { state: { from: location.search } })}
+      />
+
+      {/* Video Upload Modal */}
+      <TemplateUploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={(newTemplate: TemplateDetail) => {
+          refetch();
+          navigate(`/library/${newTemplate.templateId}`, { state: { from: location.search } });
+        }}
       />
     </PageContainer>
   );

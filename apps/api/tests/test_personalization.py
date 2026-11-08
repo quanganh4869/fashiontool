@@ -112,7 +112,7 @@ def test_create_and_execute_generation():
     assert gen_data["project_name"] == "Maya Lookbook Autumn"
 
     # 3. Poll status until completed (with timeout)
-    max_wait = 15  # seconds
+    max_wait = 30  # seconds
     start_time = time.time()
     completed_data = None
 

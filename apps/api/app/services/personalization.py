@@ -24,6 +24,7 @@ from app.schemas.personalization import (
 )
 from app.schemas.templates import TemplateStatus
 from app.services.storage import register_asset_metadata, storage_service
+from app.services.video_engine import local_video_engine
 
 logger = logging.getLogger(__name__)
 
@@ -432,16 +433,57 @@ class PersonalizationService:
                     except ValueError:
                         pass
 
-            # Synthesize real MP4 video with FFmpeg if available, or write valid container
-            self._synthesize_base_video(
-                output_video_path=out_video_file,
-                output_thumb_path=out_thumb_file,
-                source_video_path=src_video_path,
-                model_photo_path=model_photo_path,
-                duration_seconds=max(3, template.get("duration_ms", 10000) // 1000),
-                width=record["width"],
-                height=record["height"],
-            )
+            # Run local video personalization engine if template video and model photos exist
+            personalized_success = False
+            if src_video_path and src_video_path.is_file():
+                try:
+                    analysis_dir = storage_service.resolve_safe_path(f"templates/{template['template_id']}/analysis")
+                    if not (analysis_dir / "pose_sequence.json").is_file():
+                        local_video_engine.analyze_template_video(
+                            template_id=template["template_id"],
+                            video_path=src_video_path,
+                            analysis_root_dir=analysis_dir,
+                        )
+
+                    model_photos = []
+                    for a in model.get("reference_assets", []):
+                        p_rel = a.get("storage_path")
+                        if p_rel:
+                            try:
+                                p_safe = storage_service.resolve_safe_path(p_rel)
+                                if p_safe.is_file():
+                                    model_photos.append(p_safe)
+                            except ValueError:
+                                pass
+
+                    if model_photos:
+                        def update_progress(prog, msg):
+                            record["progress"] = prog
+                            record["current_step"] = msg
+
+                        local_video_engine.personalize_video(
+                            generation_id=generation_id,
+                            template_source_video=src_video_path,
+                            template_analysis_dir=analysis_dir,
+                            model_photo_paths=model_photos,
+                            output_dir=base_video_dir.parent,
+                            progress_callback=update_progress,
+                        )
+                        personalized_success = True
+                except Exception as e:
+                    logger.warning("Local video engine personalization fallback: %s", e)
+
+            if not personalized_success:
+                # Direct synthesis fallback
+                self._synthesize_base_video(
+                    output_video_path=out_video_file,
+                    output_thumb_path=out_thumb_file,
+                    source_video_path=src_video_path,
+                    model_photo_path=model_photo_path,
+                    duration_seconds=max(3, template.get("duration_ms", 10000) // 1000),
+                    width=record["width"],
+                    height=record["height"],
+                )
 
             # PHASE 3: QUALITY REVIEW
             record["status"] = GenerationStatus.QUALITY_REVIEW.value

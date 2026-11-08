@@ -68,7 +68,7 @@ export const ModelCreateWizardPage: React.FC = () => {
   };
 
   // Step 1: Save identity and proceed to photos
-  const handleSaveIdentity = async (data: { displayName: string; description: string }) => {
+  const handleSaveIdentity = async (data: { displayName: string; description?: string }) => {
     if (!modelId) return;
     setIsSaving(true);
     try {
