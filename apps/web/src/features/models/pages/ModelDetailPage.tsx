@@ -113,7 +113,8 @@ export const ModelDetailPage: React.FC = () => {
     model.referenceAssets[0];
 
   return (
-    <div className="w-full max-w-7xl mx-auto flex flex-col gap-6 font-sans pb-12">
+    <div className="w-full flex-1 min-h-0 overflow-y-auto p-4 sm:p-7 lg:p-8">
+      <div className="w-full max-w-7xl mx-auto flex flex-col gap-6 font-sans pb-12">
       {/* 1. Breadcrumb */}
       <nav aria-label="Điều hướng phân cấp" className="flex items-center gap-1.5 text-xs text-[#74716D]">
         <Link to="/models" className="hover:text-[#654B7B] transition-colors">
@@ -271,6 +272,7 @@ export const ModelDetailPage: React.FC = () => {
         onConfirmDelete={handleConfirmDelete}
         isLoading={isActionLoading}
       />
+    </div>
     </div>
   );
 };

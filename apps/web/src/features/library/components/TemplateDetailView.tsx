@@ -12,6 +12,7 @@ import {
   Tag,
   CheckCircle2,
   AlertTriangle,
+  Play,
 } from 'lucide-react';
 import { TemplateDetail } from '../types/template.types';
 import { templateService } from '../services/template.service';
@@ -32,8 +33,15 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoError, setVideoError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const streamUrl = templateService.getVideoStreamUrl(template.templateId);
+  const streamUrl = template.streamUrl
+    ? templateService.resolveMediaUrl(template.streamUrl)
+    : templateService.getVideoStreamUrl(template.templateId);
+
+  const posterUrl = template.posterUrl
+    ? templateService.resolveMediaUrl(template.posterUrl)
+    : undefined;
 
   useEffect(() => {
     return () => {
@@ -47,6 +55,15 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
       }
     };
   }, []);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  };
 
   const handleRetryVideo = () => {
     setVideoError(false);
@@ -96,8 +113,8 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Column: Video Player & Specs (5 cols) */}
         <div className="lg:col-span-5 flex flex-col gap-4">
-          {/* Player Container */}
-          <div className="relative w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-md flex items-center justify-center">
+          {/* Player Container - Constrained to max-w 380px and max-h 68vh so it fits in screen */}
+          <div className="relative w-full max-w-[380px] mx-auto aspect-[9/16] max-h-[68vh] bg-black rounded-2xl overflow-hidden shadow-md flex items-center justify-center group">
             {videoError ? (
               <div className="flex flex-col items-center justify-center p-6 text-center text-white gap-3">
                 <AlertCircle className="w-10 h-10 text-[#E86060]" />
@@ -113,19 +130,39 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
                 </Button>
               </div>
             ) : (
-              <video
-                ref={videoRef}
-                src={streamUrl}
-                poster={template.posterUrl}
-                controls
-                autoPlay
-                muted
-                playsInline
-                onError={() => setVideoError(true)}
-                className="w-full h-full object-contain"
-              >
-                Trình duyệt không hỗ trợ phát video HTML5.
-              </video>
+              <>
+                <video
+                  ref={videoRef}
+                  key={streamUrl}
+                  src={streamUrl}
+                  poster={posterUrl}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  onClick={togglePlay}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onError={() => setVideoError(true)}
+                  className="w-full h-full object-contain cursor-pointer"
+                >
+                  Trình duyệt không hỗ trợ phát video HTML5.
+                </video>
+
+                {/* Big Center Play Button Overlay when paused */}
+                {!isPlaying && !videoError && (
+                  <button
+                    type="button"
+                    onClick={togglePlay}
+                    aria-label="Phát video"
+                    className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer pointer-events-auto z-10"
+                  >
+                    <Play className="w-8 h-8 fill-white ml-1" />
+                  </button>
+                )}
+              </>
             )}
           </div>
 

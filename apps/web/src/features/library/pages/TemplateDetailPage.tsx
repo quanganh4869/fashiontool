@@ -74,11 +74,13 @@ export const TemplateDetailPage: React.FC = () => {
 
   // 3. Render Detail View
   return (
-    <TemplateDetailView
-      template={template}
-      isFavoriteLoading={isFavoriteLoading}
-      onToggleFavorite={handleToggleFavorite}
-      onBack={handleBack}
-    />
+    <div className="w-full flex-1 min-h-0 overflow-y-auto p-4 sm:p-7 lg:p-8">
+      <TemplateDetailView
+        template={template}
+        isFavoriteLoading={isFavoriteLoading}
+        onToggleFavorite={handleToggleFavorite}
+        onBack={handleBack}
+      />
+    </div>
   );
 };

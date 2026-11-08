@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { AlertCircle, RotateCcw, Clock, Layers, Film } from 'lucide-react';
+import { AlertCircle, RotateCcw, Clock, Layers, Film, Play } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { TemplateSummary } from '../types/template.types';
@@ -23,6 +23,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Stop video & reset state when closed or template changes
   useEffect(() => {
@@ -36,6 +37,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
       }
       setHasError(false);
       setErrorMessage(null);
+      setIsPlaying(false);
     }
   }, [isOpen, template]);
 
@@ -55,7 +57,22 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
 
   if (!template) return null;
 
-  const streamUrl = templateService.getVideoStreamUrl(template.templateId);
+  const streamUrl = template.previewUrl
+    ? templateService.resolveMediaUrl(template.previewUrl)
+    : templateService.getVideoStreamUrl(template.templateId);
+
+  const posterUrl = template.posterUrl
+    ? templateService.resolveMediaUrl(template.posterUrl)
+    : undefined;
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  };
 
   const handleVideoError = () => {
     setHasError(true);
@@ -81,7 +98,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
     >
       <div className="flex flex-col gap-4 mt-2">
         {/* Video Player Container (9:16 Aspect Ratio) */}
-        <div className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center">
+        <div className="relative w-full max-h-[65vh] aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center group">
           {hasError ? (
             <div className="flex flex-col items-center justify-center p-6 text-center text-white gap-3">
               <AlertCircle className="w-10 h-10 text-[#E86060]" />
@@ -97,19 +114,39 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
               </Button>
             </div>
           ) : (
-            <video
-              ref={videoRef}
-              src={streamUrl}
-              poster={template.posterUrl}
-              controls
-              autoPlay
-              muted
-              playsInline
-              onError={handleVideoError}
-              className="w-full h-full object-contain"
-            >
-              Trình duyệt của bạn không hỗ trợ thẻ phát video HTML5.
-            </video>
+            <>
+              <video
+                ref={videoRef}
+                key={streamUrl}
+                src={streamUrl}
+                poster={posterUrl}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                onClick={togglePlay}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onError={handleVideoError}
+                className="w-full h-full object-contain cursor-pointer"
+              >
+                Trình duyệt của bạn không hỗ trợ thẻ phát video HTML5.
+              </video>
+
+              {/* Big Center Play Button Overlay when paused */}
+              {!isPlaying && !hasError && (
+                <button
+                  type="button"
+                  onClick={togglePlay}
+                  aria-label="Phát video"
+                  className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer pointer-events-auto z-10"
+                >
+                  <Play className="w-7 h-7 fill-white ml-0.5" />
+                </button>
+              )}
+            </>
           )}
         </div>
 

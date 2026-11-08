@@ -168,11 +168,27 @@ export const templateService = {
   },
 
   /**
+   * Resolves media URL safely with API prefix avoidance and environment fallback
+   */
+  resolveMediaUrl(url: string | null | undefined): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    const base = config.apiUrl.replace(/\/+$/, '');
+    if (cleanUrl.startsWith('/api/v1')) {
+      const host = base.replace(/\/api\/v1\/?$/, '');
+      return `${host}${cleanUrl}`;
+    }
+    return `${base}${cleanUrl}`;
+  },
+
+  /**
    * Get direct stream URL for HTML5 video player from Local Filesystem Backend
    */
   getVideoStreamUrl(templateId: string): string {
-    const base = config.apiUrl.replace(/\/+$/, '');
-    return `${base}/templates/${templateId}/stream`;
+    return this.resolveMediaUrl(`/api/v1/templates/${templateId}/stream`);
   },
 
   /**
