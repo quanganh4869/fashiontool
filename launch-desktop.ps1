@@ -96,7 +96,7 @@ try {
         }
         
         $apiProc = Start-Process -FilePath $pythonExe `
-            -ArgumentList @("-m", "uvicorn", "app.main:app", "--port", "8000") `
+            -ArgumentList @("-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000") `
             -WorkingDirectory $ApiDir `
             -WindowStyle Hidden `
             -PassThru

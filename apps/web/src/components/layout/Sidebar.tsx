@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="h-[76px] px-5 flex items-center border-b border-[#E8E5E0] overflow-hidden shrink-0">
         <NavLink
-          to="/overview"
+          to="/studio"
           onClick={onNavigate}
           className="flex flex-col text-left focus:outline-none"
         >

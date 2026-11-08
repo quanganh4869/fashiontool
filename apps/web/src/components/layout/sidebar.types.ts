@@ -1,13 +1,8 @@
 import React from 'react';
 import {
-  LayoutDashboard,
-  Search,
-  Users,
   Clapperboard,
   UserRound,
   Library,
-  Wallet,
-  Settings,
 } from 'lucide-react';
 
 export interface NavItemConfig {
@@ -23,62 +18,27 @@ export interface NavGroupConfig {
 
 export const NAV_GROUPS: NavGroupConfig[] = [
   {
-    title: 'KHÔNG GIAN',
-    items: [
-      {
-        label: 'Tổng quan',
-        path: '/overview',
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: 'NGHIÊN CỨU',
-    items: [
-      {
-        label: 'Nghiên cứu sản phẩm',
-        path: '/products',
-        icon: Search,
-      },
-      {
-        label: 'Phân tích kênh',
-        path: '/channels',
-        icon: Users,
-      },
-    ],
-  },
-  {
-    title: 'SÁNG TẠO',
+    title: 'SẢN XUẤT VIDEO',
     items: [
       {
         label: 'Studio tạo video',
         path: '/studio',
         icon: Clapperboard,
       },
+    ],
+  },
+  {
+    title: 'TÀI NGUYÊN NGUYÊN LIỆU',
+    items: [
       {
-        label: 'Người mẫu',
+        label: 'Hồ sơ người mẫu',
         path: '/models',
         icon: UserRound,
       },
       {
-        label: 'Thư viện',
+        label: 'Kho video mẫu',
         path: '/library',
         icon: Library,
-      },
-    ],
-  },
-  {
-    title: 'TÀI KHOẢN',
-    items: [
-      {
-        label: 'Ví credit',
-        path: '/wallet',
-        icon: Wallet,
-      },
-      {
-        label: 'Cài đặt',
-        path: '/settings',
-        icon: Settings,
       },
     ],
   },

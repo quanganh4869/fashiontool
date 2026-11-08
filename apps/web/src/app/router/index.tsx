@@ -1,8 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { OverviewPage } from '@/features/overview';
-import { ProductResearchPage } from '@/features/product-research';
-import { ChannelAnalysisPage } from '@/features/channel-analysis';
 import { StudioPage } from '@/features/studio';
 import {
   ModelLibraryPage,
@@ -11,12 +8,7 @@ import {
   ModelCreateWizardPage,
 } from '@/features/models';
 import { LibraryPage, TemplateDetailPage } from '@/features/library';
-import { CreditWalletPage } from '@/features/credit-wallet';
-import { SettingsPage } from '@/features/settings';
 import { NotFoundPage } from '@/components/layout/NotFoundPage';
-import { DesignPreviewPage } from './DesignPreviewPage';
-
-const isDev = import.meta.env.DEV;
 
 export const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
   {
@@ -25,23 +17,11 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
     children: [
       {
         index: true,
-        element: <Navigate to="/overview" replace />,
+        element: <Navigate to="/studio" replace />,
       },
       {
         path: 'overview',
-        element: <OverviewPage />,
-      },
-      {
-        path: 'products',
-        element: <ProductResearchPage />,
-      },
-      {
-        path: 'products/:productId',
-        element: <ProductResearchPage />,
-      },
-      {
-        path: 'channels',
-        element: <ChannelAnalysisPage />,
+        element: <Navigate to="/studio" replace />,
       },
       {
         path: 'studio',
@@ -95,23 +75,6 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
         path: 'templates/:templateId',
         element: <TemplateDetailPage />,
       },
-      {
-        path: 'wallet',
-        element: <CreditWalletPage />,
-      },
-      {
-        path: 'settings',
-        element: <SettingsPage />,
-      },
-      // Development-only Design System Playground
-      ...(isDev
-        ? [
-            {
-              path: '__design-preview',
-              element: <DesignPreviewPage />,
-            },
-          ]
-        : []),
       {
         path: '*',
         element: <NotFoundPage />,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
 import { useModels } from '../hooks/useModels';
 import { modelManagementService } from '../services/model-management.service';
@@ -14,9 +14,7 @@ import { ModelDeleteDialog } from '../components/ModelDeleteDialog';
 export const ModelLibraryPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const isPreview = searchParams.get('preview') === 'fixture';
   const {
     items,
     query,
@@ -30,9 +28,7 @@ export const ModelLibraryPage: React.FC = () => {
     isLoading,
     error,
     reload,
-    isFixtureActive,
-    toggleFixture,
-  } = useModels(isPreview);
+  } = useModels();
 
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [modelToArchive, setModelToArchive] = useState<ModelProfileSummary | null>(null);
@@ -93,16 +89,6 @@ export const ModelLibraryPage: React.FC = () => {
     }
   };
 
-  const handleToggleFixture = () => {
-    toggleFixture();
-    if (!isFixtureActive) {
-      searchParams.set('preview', 'fixture');
-    } else {
-      searchParams.delete('preview');
-    }
-    setSearchParams(searchParams, { replace: true });
-  };
-
   const hasFilters = Boolean(query.trim() || (status && status !== 'ALL'));
 
   return (
@@ -111,8 +97,6 @@ export const ModelLibraryPage: React.FC = () => {
       <ModelPageHeader
         onCreateClick={handleCreateDraft}
         isCreating={isCreatingDraft}
-        isFixtureActive={isFixtureActive}
-        onToggleFixture={handleToggleFixture}
       />
 
       {/* 2. Filter Toolbar */}
