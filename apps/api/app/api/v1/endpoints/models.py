@@ -1,5 +1,10 @@
+import json
+import logging
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
@@ -24,13 +29,94 @@ from app.services.storage import storage_service
 
 router = APIRouter(prefix="/models", tags=["Models"])
 
-# In-memory repository for runtime persistence before DB migration
+# Persistent repository backed by data/db/models.json
 _MODELS_DB: dict[str, dict] = {}
 _CODE_COUNTER = 100
+_MODELS_FILE = Path("data/db/models.json")
 
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _save_models() -> None:
+    try:
+        _MODELS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _MODELS_FILE.write_text(
+            json.dumps(list(_MODELS_DB.values()), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning("Could not save models to disk: %s", e)
+
+
+def _seed_initial_model_if_empty() -> None:
+    if not _MODELS_DB:
+        now = _now_iso()
+        default_model = {
+            "model_id": "mod-linh-01",
+            "model_code": "MOD-000101",
+            "display_name": "Linh - Phong cách đường phố",
+            "description": "Người mẫu nữ phong cách hiện đại, phù hợp trang phục streetwear, casual và dự tiệc.",
+            "status": ModelStatus.READY.value,
+            "created_at": now,
+            "updated_at": now,
+            "cover_asset_id": "ast-linh-front",
+            "reference_assets": [
+                {
+                    "asset_id": "ast-linh-front",
+                    "model_id": "mod-linh-01",
+                    "original_filename": "front.jpg",
+                    "mime_type": "image/jpeg",
+                    "file_size_bytes": 6938,
+                    "storage_path": "templates/users/usr-system-default/models/mod-test/photos/front.jpg",
+                    "view_url": "/api/v1/assets/ast-linh-front/view",
+                    "thumbnail_url": "/api/v1/assets/ast-linh-front/view",
+                    "order_index": 0,
+                    "is_cover": True,
+                    "created_at": now,
+                    "orientation": "front",
+                    "sort_order": 0,
+                    "quality_score": 95.0,
+                    "validation_status": "VALID",
+                }
+            ],
+            "used_in_projects_count": 0,
+        }
+        _MODELS_DB["mod-linh-01"] = default_model
+        register_asset_metadata({
+            "asset_id": "ast-linh-front",
+            "storage_path": "templates/users/usr-system-default/models/mod-test/photos/front.jpg",
+            "mime_type": "image/jpeg",
+        })
+        _save_models()
+
+
+def _load_models() -> None:
+    global _CODE_COUNTER
+    if _MODELS_FILE.is_file():
+        try:
+            items = json.loads(_MODELS_FILE.read_text(encoding="utf-8"))
+            for m in items:
+                _MODELS_DB[m["model_id"]] = m
+                for a in m.get("reference_assets", []):
+                    aid = a.get("asset_id")
+                    spath = a.get("storage_path")
+                    if aid and spath:
+                        register_asset_metadata({
+                            "asset_id": aid,
+                            "storage_path": spath,
+                            "mime_type": "image/jpeg",
+                        })
+            if _MODELS_DB:
+                _CODE_COUNTER = max(_CODE_COUNTER, len(_MODELS_DB) + 100)
+        except Exception as e:
+            logger.warning("Could not load models from disk: %s", e)
+
+    _seed_initial_model_if_empty()
+
+
+_load_models()
 
 
 def _next_model_code() -> str:
@@ -67,6 +153,24 @@ def _build_summary(model: dict) -> ModelProfileSummaryResponse:
     )
 
 
+def _build_asset_response(model_id: str, a: dict) -> ModelAssetResponse:
+    return ModelAssetResponse(
+        asset_id=a["asset_id"],
+        model_id=a.get("model_id") or model_id,
+        original_filename=a.get("original_filename") or "photo.jpg",
+        mime_type=a.get("mime_type") or "image/jpeg",
+        file_size_bytes=int(a.get("file_size_bytes") or 6938),
+        width=a.get("width"),
+        height=a.get("height"),
+        storage_path=a.get("storage_path") or "",
+        view_url=a.get("view_url") or f"/api/v1/assets/{a['asset_id']}/view",
+        thumbnail_url=a.get("thumbnail_url") or a.get("view_url") or f"/api/v1/assets/{a['asset_id']}/view",
+        order_index=int(a.get("order_index") if a.get("order_index") is not None else (a.get("sort_order") or 0)),
+        is_cover=bool(a.get("is_cover", False)),
+        created_at=a.get("created_at") or _now_iso(),
+    )
+
+
 def _build_detail(model: dict) -> ModelProfileDetailResponse:
     cover_asset_id = model.get("cover_asset_id")
     cover_image_url = None
@@ -79,8 +183,9 @@ def _build_detail(model: dict) -> ModelProfileDetailResponse:
         cover_image_url = model["reference_assets"][0]["view_url"]
         cover_asset_id = model["reference_assets"][0]["asset_id"]
 
+    mid = model["model_id"]
     return ModelProfileDetailResponse(
-        model_id=model["model_id"],
+        model_id=mid,
         model_code=model["model_code"],
         display_name=model["display_name"],
         description=model.get("description"),
@@ -91,7 +196,7 @@ def _build_detail(model: dict) -> ModelProfileDetailResponse:
         same_model_confirmed=model.get("same_model_confirmed", False),
         usage_rights_confirmed=model.get("usage_rights_confirmed", False),
         reference_assets=[
-            ModelAssetResponse(**a) for a in model.get("reference_assets", [])
+            _build_asset_response(mid, a) for a in model.get("reference_assets", [])
         ],
         used_in_projects_count=model.get("used_in_projects_count", 0),
         created_at=model["created_at"],
@@ -181,6 +286,7 @@ async def create_draft_model():
         "updated_at": now,
     }
     _MODELS_DB[model_id] = model_record
+    _save_models()
     return _build_detail(model_record)
 
 
@@ -220,6 +326,7 @@ async def update_model_identity(model_id: str, body: UpdateIdentityRequest):
     model["display_name"] = trimmed_name
     model["description"] = body.description.strip() if body.description else ""
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -318,6 +425,7 @@ async def upload_model_asset(
             a["is_cover"] = a["asset_id"] == asset_id
 
     model["updated_at"] = _now_iso()
+    _save_models()
     return ModelAssetResponse(**asset_record)
 
 
@@ -355,6 +463,7 @@ async def update_assets_order(model_id: str, body: ReorderAssetsRequest):
             a["is_cover"] = a["asset_id"] == body.cover_asset_id
 
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -404,6 +513,7 @@ async def delete_model_asset(model_id: str, asset_id: str):
             model["cover_asset_id"] = None
 
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -447,6 +557,7 @@ async def finalize_model(model_id: str, body: FinalizeModelRequest):
     model["usage_rights_confirmed"] = True
     model["status"] = ModelStatus.READY.value
     model["updated_at"] = _now_iso()
+    _save_models()
 
     return _build_detail(model)
 
@@ -493,6 +604,7 @@ async def update_model_profile(model_id: str, body: UpdateModelRequest):
 
     model["model_version"] = model.get("model_version", 1) + 1
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -510,6 +622,7 @@ async def archive_model(model_id: str):
 
     model["status"] = ModelStatus.ARCHIVED.value
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -533,6 +646,7 @@ async def restore_model(model_id: str):
 
     model["status"] = ModelStatus.READY.value
     model["updated_at"] = _now_iso()
+    _save_models()
     return _build_detail(model)
 
 
@@ -563,4 +677,5 @@ async def delete_model(model_id: str):
         unregister_asset_metadata(a["asset_id"])
 
     del _MODELS_DB[model_id]
+    _save_models()
     return {"message": "Đã xóa hồ sơ người mẫu.", "model_id": model_id}
