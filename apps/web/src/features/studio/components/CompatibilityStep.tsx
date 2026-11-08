@@ -110,7 +110,7 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
 
         {/* Template Card */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-center">
-          <div className="w-16 h-20 rounded-lg overflow-hidden bg-slate-900 flex-shrink-0 border border-slate-200">
+          <div className="w-16 h-20 rounded-lg overflow-hidden bg-[#F6F5F2] flex-shrink-0 border border-[#E8E5E0]">
             {template.posterUrl ? (
               <img
                 src={template.posterUrl}

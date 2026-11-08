@@ -181,7 +181,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
                 }`}
               >
                 {/* Poster & Preview Trigger */}
-                <div className="relative aspect-[9/16] bg-slate-900 overflow-hidden">
+                <div className="relative aspect-[9/16] bg-[#F6F5F2] overflow-hidden">
                   {template.posterUrl ? (
                     <img
                       src={template.posterUrl}

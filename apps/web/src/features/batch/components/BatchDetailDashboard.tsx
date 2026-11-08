@@ -201,7 +201,7 @@ export const BatchDetailDashboard: React.FC<BatchDetailDashboardProps> = ({
               >
                 {/* Left: Thumbnail & Product info */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-14 rounded-lg bg-slate-900 overflow-hidden shrink-0 flex items-center justify-center border border-slate-200 relative group">
+                  <div className="w-12 h-14 rounded-lg bg-[#F6F5F2] overflow-hidden shrink-0 flex items-center justify-center border border-[#E8E5E0] relative group">
                     {thumbUrl ? (
                       <img src={thumbUrl} alt={job.product_title} className="w-full h-full object-cover" />
                     ) : (

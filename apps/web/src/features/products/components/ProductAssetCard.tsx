@@ -31,7 +31,7 @@ export const ProductAssetCard: React.FC<ProductAssetCardProps> = ({
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col group">
       {/* Image Container */}
-      <div className="relative aspect-[3/4] bg-slate-950 overflow-hidden flex items-center justify-center">
+      <div className="relative aspect-[3/4] bg-[#F6F5F2] overflow-hidden flex items-center justify-center">
         {primaryUrl ? (
           <img
             src={primaryUrl}
@@ -39,20 +39,20 @@ export const ProductAssetCard: React.FC<ProductAssetCardProps> = ({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-slate-500 text-xs">
+          <div className="flex flex-col items-center justify-center text-[#74716D] text-xs">
             <Images className="w-8 h-8 mb-1" />
             <span>Chưa có ảnh</span>
           </div>
         )}
 
         {/* Total Images Pill */}
-        <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-          <Images className="w-3 h-3" />
+        <div className="absolute top-2.5 right-2.5 bg-white/95 backdrop-blur-xs text-[#242321] border border-[#E8E5E0] text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+          <Images className="w-3 h-3 text-[#654B7B]" />
           {product.total_images_count} ảnh
         </div>
 
         {/* Source Domain Badge */}
-        <div className="absolute bottom-2.5 left-2.5 bg-slate-900/80 backdrop-blur-xs text-slate-200 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-mono">
+        <div className="absolute bottom-2.5 left-2.5 bg-white/95 backdrop-blur-xs text-[#242321] border border-[#E8E5E0] text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-mono shadow-xs">
           <span>{product.source_domain}</span>
         </div>
       </div>

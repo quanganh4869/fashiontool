@@ -86,7 +86,7 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
       {/* Main Content Layout: Video Player + Specs */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Video Player Column (5 cols on large) */}
-        <div className="lg:col-span-5 bg-slate-950 rounded-2xl overflow-hidden shadow-md flex flex-col items-center justify-center p-3">
+        <div className="lg:col-span-5 bg-white border border-[#E8E5E0] rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center p-4">
           <div className="relative w-full max-w-[340px] aspect-[9/16] bg-black rounded-xl overflow-hidden flex items-center justify-center">
             {videoUrl ? (
               <video

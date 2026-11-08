@@ -61,31 +61,30 @@ export const BatchSelectionWorkspace: React.FC<BatchSelectionWorkspaceProps> = (
   return (
     <div className="space-y-5">
       {/* 1. Base Video Header Banner */}
-      <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white text-[#242321] rounded-2xl p-5 border border-[#E8E5E0] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
-            <Film className="w-6 h-6 text-indigo-400" />
+          <div className="w-12 h-12 rounded-xl bg-[#F6F5F2] border border-[#E8E5E0] flex items-center justify-center shrink-0">
+            <Film className="w-6 h-6 text-[#654B7B]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-[#654B7B] uppercase tracking-wider">
                 Personalized Base Video (Nguồn chung)
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <ShieldCheck className="w-3 h-3" /> READY
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" /> READY
               </span>
             </div>
-            <h3 className="text-base font-bold text-white mt-0.5">
+            <h3 className="text-base font-semibold text-[#242321] mt-0.5">
               Người mẫu: {generation.modelName} • Mẫu: {generation.templateTitle}
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Độ phân giải: 1080x1920 (9:16) • FPS: 30 • Toàn bộ chuyển động và diện mạo sẽ được bảo
-              toàn 100%.
+            <p className="text-xs text-[#74716D] mt-0.5">
+              Độ phân giải: 1080x1920 (9:16) • FPS: 30 • Toàn bộ chuyển động và diện mạo sẽ được bảo toàn.
             </p>
           </div>
         </div>
 
-        <div className="text-xs text-slate-400 font-mono bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800">
+        <div className="text-xs text-[#74716D] font-mono bg-[#F6F5F2] px-3 py-1.5 rounded-lg border border-[#E8E5E0]">
           Base ID: {(generation.outputVideoAssetId || generation.generationId).slice(0, 16)}...
         </div>
       </div>
@@ -175,7 +174,7 @@ export const BatchSelectionWorkspace: React.FC<BatchSelectionWorkspaceProps> = (
                 </div>
 
                 {/* Photo */}
-                <div className="aspect-[3/4] bg-slate-950 overflow-hidden relative flex items-center justify-center">
+                <div className="aspect-[3/4] bg-[#F6F5F2] overflow-hidden relative flex items-center justify-center">
                   {primaryUrl ? (
                     <img
                       src={primaryUrl}
@@ -183,10 +182,10 @@ export const BatchSelectionWorkspace: React.FC<BatchSelectionWorkspaceProps> = (
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <Shirt className="w-8 h-8 text-slate-500" />
+                    <Shirt className="w-8 h-8 text-[#74716D]" />
                   )}
 
-                  <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-xs text-slate-300 text-[10px] px-2 py-0.5 rounded-md font-mono">
+                  <div className="absolute bottom-2 left-2 bg-white/95 backdrop-blur-xs text-[#242321] border border-[#E8E5E0] text-[10px] px-2 py-0.5 rounded-md font-mono shadow-xs">
                     {p.source_domain}
                   </div>
                 </div>

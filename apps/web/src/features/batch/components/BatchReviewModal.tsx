@@ -126,7 +126,7 @@ export const BatchReviewModal: React.FC<BatchReviewModalProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-12 h-14 rounded-lg bg-slate-900 overflow-hidden shrink-0 flex items-center justify-center border border-slate-300">
+                  <div className="w-12 h-14 rounded-lg bg-[#F6F5F2] overflow-hidden shrink-0 flex items-center justify-center border border-[#E8E5E0]">
                     {imgUrl ? (
                       <img src={imgUrl} alt={item.product_title} className="w-full h-full object-cover" />
                     ) : (

@@ -214,15 +214,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 return (
                   <div
                     key={img.image_id}
-                    className={`group relative rounded-xl border overflow-hidden bg-slate-900 transition-all ${
+                    className={`group relative rounded-xl border overflow-hidden bg-[#F6F5F2] transition-all ${
                       isPrimary
-                        ? 'ring-2 ring-indigo-600 border-indigo-600 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-400'
+                        ? 'ring-2 ring-[#654B7B] border-[#654B7B] shadow-sm'
+                        : 'border-[#E8E5E0] hover:border-[#654B7B]/50'
                     }`}
                   >
                     <div
                       onClick={() => setLightboxIndex(idx)}
-                      className="aspect-[3/4] w-full cursor-pointer overflow-hidden flex items-center justify-center bg-slate-950"
+                      className="aspect-[3/4] w-full cursor-pointer overflow-hidden flex items-center justify-center bg-[#F6F5F2]"
                     >
                       <img
                         src={viewUrl}

@@ -231,7 +231,7 @@ export const FinalProductVideoReview: React.FC<FinalProductVideoReviewProps> = (
           </div>
 
           {/* Player / Media Viewer Container */}
-          <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-lg flex flex-col items-center justify-center min-h-[480px] relative group">
+          <div className="bg-white rounded-2xl overflow-hidden border border-[#E8E5E0] shadow-sm flex flex-col items-center justify-center min-h-[480px] p-4 relative group">
             {/* Top Overlay Controls: Zoom Bar */}
             {activeTab === 'final' && finalVideoUrl && (
               <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1 rounded-lg border border-slate-700/60 shadow-md">

@@ -343,7 +343,7 @@ export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
                     onClick={() => handleViewDetails(p.product_id)}
                     className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center gap-2.5 cursor-pointer hover:border-indigo-400 transition-colors"
                   >
-                    <div className="w-10 h-10 rounded bg-slate-900 shrink-0 overflow-hidden flex items-center justify-center">
+                    <div className="w-10 h-10 rounded bg-[#F6F5F2] border border-[#E8E5E0] shrink-0 overflow-hidden flex items-center justify-center">
                       {p.primary_image_url ? (
                         <img
                           src={productService.resolveImageUrl(p.primary_image_url)}
