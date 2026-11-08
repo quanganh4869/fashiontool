@@ -9,6 +9,7 @@ interface ProductAssetListProps {
   onViewDetails: (productId: string) => void;
   onDelete: (productId: string) => void;
   onAddNewClick: () => void;
+  onStartReplacement?: (productId: string) => void;
   isDeletingId?: string | null;
 }
 
@@ -17,6 +18,7 @@ export const ProductAssetList: React.FC<ProductAssetListProps> = ({
   onViewDetails,
   onDelete,
   onAddNewClick,
+  onStartReplacement,
   isDeletingId,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,6 +87,7 @@ export const ProductAssetList: React.FC<ProductAssetListProps> = ({
               product={p}
               onViewDetails={onViewDetails}
               onDelete={onDelete}
+              onStartReplacement={onStartReplacement}
               isDeleting={isDeletingId === p.product_id}
             />
           ))}

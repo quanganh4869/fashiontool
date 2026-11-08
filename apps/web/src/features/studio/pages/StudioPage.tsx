@@ -10,6 +10,7 @@ import { GenerationProgressStep } from '../components/GenerationProgressStep';
 import { GenerationResultStep } from '../components/GenerationResultStep';
 import { ProjectHistoryDrawer } from '../components/ProjectHistoryDrawer';
 import { ProductManagementStep } from '@/features/products';
+import { ReplacementWorkspaceStep } from '@/features/replacement';
 
 export const StudioPage: React.FC = () => {
   const {
@@ -134,6 +135,14 @@ export const StudioPage: React.FC = () => {
           <ProductManagementStep
             generation={generation}
             onBackToBaseVideo={() => setStep('result')}
+            onProceedToReplacement={() => setStep('replacement')}
+          />
+        )}
+
+        {step === 'replacement' && generation && (
+          <ReplacementWorkspaceStep
+            generation={generation}
+            onBackToProducts={() => setStep('products')}
           />
         )}
       </div>

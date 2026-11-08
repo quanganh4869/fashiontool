@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     overview,
     personalization,
     products,
+    replacements,
     templates,
 )
 
@@ -20,3 +21,4 @@ api_router.include_router(assets.router)
 api_router.include_router(templates.router)
 api_router.include_router(personalization.router)
 api_router.include_router(products.router)
+api_router.include_router(replacements.router)

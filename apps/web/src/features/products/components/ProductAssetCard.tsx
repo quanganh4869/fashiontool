@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Images,
   Building2,
+  Shirt,
 } from 'lucide-react';
 import { ProductAssetSummaryResponse } from '../types/product.types';
 import { productService } from '../services/product.service';
@@ -13,6 +14,7 @@ interface ProductAssetCardProps {
   product: ProductAssetSummaryResponse;
   onViewDetails: (productId: string) => void;
   onDelete: (productId: string) => void;
+  onStartReplacement?: (productId: string) => void;
   isDeleting?: boolean;
 }
 
@@ -20,6 +22,7 @@ export const ProductAssetCard: React.FC<ProductAssetCardProps> = ({
   product,
   onViewDetails,
   onDelete,
+  onStartReplacement,
   isDeleting = false,
 }) => {
   const displayTitle = product.custom_title || product.title;
@@ -77,11 +80,25 @@ export const ProductAssetCard: React.FC<ProductAssetCardProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
+          {onStartReplacement && (
+            <button
+              type="button"
+              onClick={() => onStartReplacement(product.product_id)}
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+              title="Thay trang phục bằng sản phẩm này"
+            >
+              <Shirt className="w-3.5 h-3.5" />
+              Thay đồ
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => onViewDetails(product.product_id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-medium transition-colors"
+            className={`${
+              onStartReplacement ? 'px-2' : 'flex-1'
+            } flex items-center justify-center gap-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors`}
           >
             <Eye className="w-3.5 h-3.5" />
             Chi tiết

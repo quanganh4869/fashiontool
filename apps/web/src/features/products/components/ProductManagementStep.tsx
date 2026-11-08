@@ -5,6 +5,7 @@ import {
   AlertCircle,
   RefreshCw,
   FolderOpen,
+  Shirt,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ModelTemplateGeneration } from '@/features/studio/types/studio.types';
@@ -24,6 +25,7 @@ import { ProductDetailModal } from './ProductDetailModal';
 interface ProductManagementStepProps {
   generation: ModelTemplateGeneration;
   onBackToBaseVideo?: () => void;
+  onProceedToReplacement?: (productId?: string) => void;
 }
 
 type ViewMode = 'list' | 'input' | 'extracting' | 'preview';
@@ -31,6 +33,7 @@ type ViewMode = 'list' | 'input' | 'extracting' | 'preview';
 export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
   generation,
   onBackToBaseVideo,
+  onProceedToReplacement,
 }) => {
   const projectId = generation.projectId;
 
@@ -258,6 +261,17 @@ export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
             <PlusCircle className="w-4 h-4" />
             Thêm sản phẩm mới từ liên kết
           </button>
+
+          {products.length > 0 && onProceedToReplacement && (
+            <button
+              type="button"
+              onClick={() => onProceedToReplacement()}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs"
+            >
+              <Shirt className="w-4 h-4" />
+              Tiến hành thay trang phục (Bước 7)
+            </button>
+          )}
         </div>
 
         {viewMode === 'list' && (
@@ -294,6 +308,7 @@ export const ProductManagementStep: React.FC<ProductManagementStepProps> = ({
           onViewDetails={handleViewDetails}
           onDelete={handleDeleteProduct}
           onAddNewClick={() => setViewMode('input')}
+          onStartReplacement={onProceedToReplacement}
           isDeletingId={deletingProductId}
         />
       )}
