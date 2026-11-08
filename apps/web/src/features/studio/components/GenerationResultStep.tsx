@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   RotateCcw,
   Download,
@@ -28,6 +28,19 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoUrl = studioService.resolveMediaUrl(generation.outputVideoUrl);
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+          videoRef.current.removeAttribute('src');
+          videoRef.current.load();
+        } catch {}
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-6">

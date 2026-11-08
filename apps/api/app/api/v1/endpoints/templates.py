@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse
 
+from app.core.config import settings
 from app.schemas.templates import (
     AssessmentStatus,
     TemplateCategoryResponse,
@@ -43,7 +44,7 @@ _CATEGORIES = [
     {"id": "closeup_product", "name": "Close-up Product"},
 ]
 
-_CUSTOM_TEMPLATES_FILE = Path("data/db/custom_templates.json")
+_CUSTOM_TEMPLATES_FILE = settings.storage_root_path.parent / "db" / "custom_templates.json"
 
 # Published Video Templates Catalog
 _TEMPLATES_CATALOG: dict[str, dict] = {
@@ -1156,3 +1157,33 @@ async def get_template_analysis(template_id: str):
     from app.services.video_engine.motion_data import MotionDataService
     motion_service = MotionDataService()
     return motion_service.load_artifacts(analysis_dir)
+
+
+@router.delete("/{template_id}", status_code=status.HTTP_200_OK)
+async def delete_template(template_id: str):
+    """
+    Deletes a user-uploaded custom template and its storage directory.
+    """
+    tmpl = _TEMPLATES_CATALOG.get(template_id)
+    if not tmpl:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Không tìm thấy video mẫu.",
+        )
+    if not tmpl.get("is_custom"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể xóa video mẫu mặc định của hệ thống.",
+        )
+
+    del _TEMPLATES_CATALOG[template_id]
+    _save_custom_templates()
+
+    try:
+        tmpl_dir = settings.storage_root_path / "templates" / template_id
+        if tmpl_dir.is_dir():
+            shutil.rmtree(tmpl_dir, ignore_errors=True)
+    except Exception as e:
+        logger.warning("Could not delete template directory: %s", e)
+
+    return {"message": "Đã xóa video mẫu thành công.", "template_id": template_id}

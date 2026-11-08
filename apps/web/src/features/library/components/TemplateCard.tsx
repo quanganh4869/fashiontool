@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { Heart, Play, Film, Clock } from 'lucide-react';
+import { Heart, Film, Clock } from 'lucide-react';
 import { TemplateSummary } from '../types/template.types';
 import { templateService } from '../services/template.service';
 
 export interface TemplateCardProps {
   template: TemplateSummary;
-  onPreview: (template: TemplateSummary) => void;
+  onPreview?: (template: TemplateSummary) => void;
   onClick: (template: TemplateSummary) => void;
   onToggleFavorite: (templateId: string) => Promise<boolean>;
 }
 
 export const TemplateCard: React.FC<TemplateCardProps> = ({
   template,
-  onPreview,
   onClick,
   onToggleFavorite,
 }) => {
@@ -30,11 +29,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
     } finally {
       setIsFavLoading(false);
     }
-  };
-
-  const handlePreviewClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onPreview(template);
   };
 
   return (
@@ -101,19 +95,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
             <Clock className="w-3 h-3" />
             {templateService.formatDuration(template.durationMs)}
           </span>
-        </div>
-
-        {/* Hover Overlay with Preview Button (Desktop) */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
-          <button
-            type="button"
-            onClick={handlePreviewClick}
-            aria-label={`Xem trước video ${template.title}`}
-            className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#242321] text-xs font-semibold shadow-lg hover:bg-[#F6F5F2] hover:scale-105 transition-all cursor-pointer"
-          >
-            <Play className="w-3.5 h-3.5 fill-[#242321]" />
-            <span>Xem trước</span>
-          </button>
         </div>
       </div>
 

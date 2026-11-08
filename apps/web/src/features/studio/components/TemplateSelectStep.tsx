@@ -3,7 +3,6 @@ import {
   Clapperboard,
   Search,
   CheckCircle2,
-  Play,
   ArrowRight,
   ArrowLeft,
   Clock,
@@ -173,14 +172,17 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
             return (
               <div
                 key={template.templateId}
-                onClick={() => onSelectTemplate(template)}
+                onClick={() => {
+                  onSelectTemplate(template);
+                  setPreviewingTemplate(template);
+                }}
                 className={`group relative bg-white rounded-xl border transition-all cursor-pointer overflow-hidden flex flex-col ${
                   isSelected
-                    ? 'border-indigo-600 ring-2 ring-indigo-500/20 shadow-md'
-                    : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                    ? 'border-[#654B7B] ring-2 ring-[#654B7B]/20 shadow-md'
+                    : 'border-[#E8E5E0] hover:border-[#654B7B]/70 hover:shadow-sm'
                 }`}
               >
-                {/* Poster & Preview Trigger */}
+                {/* Poster & Direct Click Trigger */}
                 <div className="relative aspect-[9/16] bg-[#F6F5F2] overflow-hidden">
                   {template.posterUrl ? (
                     <img
@@ -190,14 +192,14 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-2">
-                      <Clapperboard className="w-10 h-10" />
+                      <Clapperboard className="w-10 h-10 text-[#A19D97]" />
                       <span className="text-xs">Không có ảnh bìa</span>
                     </div>
                   )}
 
                   {/* Selected badge */}
                   {isSelected && (
-                    <div className="absolute top-2 right-2 bg-indigo-600 text-white rounded-full p-1 shadow-sm z-10">
+                    <div className="absolute top-2 right-2 bg-[#654B7B] text-white rounded-full p-1 shadow-sm z-10">
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                   )}
@@ -212,50 +214,28 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
                     <Clock className="w-3 h-3" />
                     {templateService.formatDuration(template.durationMs)}
                   </div>
-
-                  {/* Preview Button Overlay */}
-                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewingTemplate(template);
-                      }}
-                      className="bg-white/90 hover:bg-white text-slate-900 rounded-full p-3 shadow-lg transform group-hover:scale-105 transition-all"
-                      aria-label="Xem thử video"
-                    >
-                      <Play className="w-5 h-5 fill-slate-900 translate-x-0.5" />
-                    </button>
-                  </div>
                 </div>
 
                 {/* Details */}
                 <div className="p-3.5 flex-1 flex flex-col justify-between">
                   <div>
-                    <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-[#654B7B] uppercase tracking-wider">
                       {template.categoryName}
                     </span>
-                    <h3 className="font-semibold text-slate-900 text-sm line-clamp-2 mt-0.5 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="font-semibold text-[#242321] text-sm line-clamp-2 mt-0.5">
                       {template.title}
                     </h3>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="mt-3 pt-2.5 border-t border-[#F0EFEA] flex items-center justify-between text-xs text-[#74716D]">
                     <span className="flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5" />
+                      <Layers className="w-3.5 h-3.5 text-[#654B7B]" />
                       {template.garmentSlotsSummary.length} vị trí đồ
                     </span>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewingTemplate(template);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      Xem thử
-                    </button>
+                    <span className="text-[#654B7B] font-medium text-xs">
+                      {isSelected ? 'Đã chọn' : 'Nhấp để xem'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -298,6 +278,7 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
         template={previewingTemplate}
         isOpen={Boolean(previewingTemplate)}
         onClose={() => setPreviewingTemplate(null)}
+        onSelect={onSelectTemplate}
       />
 
       <TemplateUploadModal

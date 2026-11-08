@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   CheckCircle2,
   RotateCcw,
@@ -73,6 +73,26 @@ export const FinalProductVideoReview: React.FC<FinalProductVideoReviewProps> = (
       }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+          videoRef.current.removeAttribute('src');
+          videoRef.current.load();
+        } catch {}
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'final' && videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [activeTab]);
 
   // Retry modal state
   const [isRetryModalOpen, setIsRetryModalOpen] = useState(false);

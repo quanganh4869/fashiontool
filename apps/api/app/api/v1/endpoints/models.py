@@ -32,7 +32,7 @@ router = APIRouter(prefix="/models", tags=["Models"])
 # Persistent repository backed by data/db/models.json
 _MODELS_DB: dict[str, dict] = {}
 _CODE_COUNTER = 100
-_MODELS_FILE = Path("data/db/models.json")
+_MODELS_FILE = settings.storage_root_path.parent / "db" / "models.json"
 
 
 def _now_iso() -> str:

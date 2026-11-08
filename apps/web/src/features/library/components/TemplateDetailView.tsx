@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Heart,
@@ -34,6 +34,19 @@ export const TemplateDetailView: React.FC<TemplateDetailViewProps> = ({
   const [videoError, setVideoError] = useState(false);
 
   const streamUrl = templateService.getVideoStreamUrl(template.templateId);
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+          videoRef.current.removeAttribute('src');
+          videoRef.current.load();
+        } catch {}
+      }
+    };
+  }, []);
 
   const handleRetryVideo = () => {
     setVideoError(false);

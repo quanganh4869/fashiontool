@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Play,
   Pause,
@@ -36,6 +36,36 @@ export const SynchronizedVideoComparisonModal: React.FC<SynchronizedVideoCompari
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(5);
   const [isMuted, setIsMuted] = useState(true);
+
+  // Stop playback when modal closes or unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      if (baseVideoRef.current) baseVideoRef.current.pause();
+      if (finalVideoRef.current) finalVideoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (baseVideoRef.current) {
+        try {
+          baseVideoRef.current.pause();
+          baseVideoRef.current.muted = true;
+          baseVideoRef.current.removeAttribute('src');
+          baseVideoRef.current.load();
+        } catch {}
+      }
+      if (finalVideoRef.current) {
+        try {
+          finalVideoRef.current.pause();
+          finalVideoRef.current.muted = true;
+          finalVideoRef.current.removeAttribute('src');
+          finalVideoRef.current.load();
+        } catch {}
+      }
+    };
+  }, []);
 
   if (!video) return null;
 

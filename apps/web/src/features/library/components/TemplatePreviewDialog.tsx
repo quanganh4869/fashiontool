@@ -10,6 +10,7 @@ export interface TemplatePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateDetail?: (templateId: string) => void;
+  onSelect?: (template: TemplateSummary) => void;
 }
 
 export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
@@ -17,6 +18,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   isOpen,
   onClose,
   onNavigateDetail,
+  onSelect,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
@@ -26,13 +28,30 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
   useEffect(() => {
     if (!isOpen) {
       if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+          videoRef.current.currentTime = 0;
+        } catch {}
       }
       setHasError(false);
       setErrorMessage(null);
     }
   }, [isOpen, template]);
+
+  // Guaranteed unmount media release
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+          videoRef.current.muted = true;
+          videoRef.current.removeAttribute('src');
+          videoRef.current.load();
+        } catch {}
+      }
+    };
+  }, []);
 
   if (!template) return null;
 
@@ -118,7 +137,18 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
             Đóng
           </Button>
 
-          {onNavigateDetail && (
+          {onSelect ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                onSelect(template);
+                onClose();
+              }}
+            >
+              Chọn video mẫu này
+            </Button>
+          ) : onNavigateDetail ? (
             <Button
               variant="primary"
               size="sm"
@@ -129,7 +159,7 @@ export const TemplatePreviewDialog: React.FC<TemplatePreviewDialogProps> = ({
             >
               Xem chi tiết video mẫu
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </Dialog>

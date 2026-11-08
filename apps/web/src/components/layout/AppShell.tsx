@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,18 @@ export const AppShell: React.FC = () => {
   });
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = useLocation();
+
+  // Stop any lingering media playback across the entire app whenever route changes
+  useEffect(() => {
+    document.querySelectorAll('video, audio').forEach((node) => {
+      try {
+        const media = node as HTMLMediaElement;
+        media.pause();
+        media.muted = true;
+      } catch {}
+    });
+  }, [location.pathname]);
 
   const handleToggleCollapse = () => {
     setIsCollapsed((prev) => {
