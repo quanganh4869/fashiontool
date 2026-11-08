@@ -131,3 +131,19 @@ async def get_project_detail(project_id: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(project_id: str):
+    """
+    Deletes a video personalization project.
+    """
+    try:
+        personalization_service.delete_project(
+            project_id=project_id,
+            user_id=CURRENT_USER_ID,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

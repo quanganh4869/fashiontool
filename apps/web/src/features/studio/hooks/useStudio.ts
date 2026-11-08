@@ -6,6 +6,7 @@ import { templateService } from '@/features/library/services/template.service';
 import {
   CompatibilityCheckResponse,
   ModelTemplateGeneration,
+  ProjectSummary,
   StudioStep,
 } from '../types/studio.types';
 import { studioService } from '../services/studio.service';
@@ -233,6 +234,40 @@ export function useStudio() {
     }
   };
 
+  const handleOpenProject = async (project: ProjectSummary) => {
+    setActiveProjectId(project.projectId);
+    setActiveProjectName(project.name);
+
+    if (project.currentGenerationId) {
+      await handleLoadGeneration(project.currentGenerationId);
+      return;
+    }
+
+    try {
+      const detail = await studioService.getProjectDetail(project.projectId);
+      if (detail.generations && detail.generations.length > 0) {
+        await handleLoadGeneration(detail.generations[0].generationId);
+        return;
+      }
+    } catch {
+      // Fallback if detail load fails
+    }
+
+    const foundModel = models.find((m) => m.modelId === project.modelId);
+    if (foundModel) setSelectedModel(foundModel);
+
+    const foundTemplate = templates.find((t) => t.templateId === project.templateId);
+    if (foundTemplate) setSelectedTemplate(foundTemplate);
+
+    if (foundModel && foundTemplate) {
+      setStep('confirm');
+    } else if (foundModel) {
+      setStep('template');
+    } else {
+      setStep('model');
+    }
+  };
+
   const handleResetToNew = () => {
     setSelectedModel(null);
     setSelectedTemplate(null);
@@ -281,6 +316,7 @@ export function useStudio() {
     handleCancelGeneration,
     handleRetryGeneration,
     handleLoadGeneration,
+    handleOpenProject,
     handleResetToNew,
     canNavigateToStep,
   };

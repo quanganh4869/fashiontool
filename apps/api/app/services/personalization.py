@@ -41,13 +41,120 @@ def _get_templates_catalog() -> dict:
 
     return _TEMPLATES_CATALOG
 
-# In-memory storage for Projects and Generations
+# Persistent storage for Projects and Generations
 _PROJECTS_DB: dict[str, dict[str, Any]] = {}
 _GENERATIONS_DB: dict[str, dict[str, Any]] = {}
+
+_PROJECTS_FILE = settings.storage_root_path.parent / "db" / "projects.json"
+_GENERATIONS_FILE = settings.storage_root_path.parent / "db" / "generations.json"
+
+
+def _save_projects_db() -> None:
+    try:
+        _PROJECTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _PROJECTS_FILE.write_text(
+            json.dumps(_PROJECTS_DB, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning("Could not persist projects to disk: %s", e)
+
+
+def _save_generations_db() -> None:
+    try:
+        _GENERATIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _GENERATIONS_FILE.write_text(
+            json.dumps(_GENERATIONS_DB, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning("Could not persist generations to disk: %s", e)
 
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _load_databases() -> None:
+    global _PROJECTS_DB, _GENERATIONS_DB
+    try:
+        if _PROJECTS_FILE.is_file():
+            loaded_p = json.loads(_PROJECTS_FILE.read_text(encoding="utf-8"))
+            if isinstance(loaded_p, dict):
+                _PROJECTS_DB = loaded_p
+    except Exception as e:
+        logger.warning("Could not load projects from disk: %s", e)
+
+    try:
+        if _GENERATIONS_FILE.is_file():
+            loaded_g = json.loads(_GENERATIONS_FILE.read_text(encoding="utf-8"))
+            if isinstance(loaded_g, dict):
+                _GENERATIONS_DB = loaded_g
+    except Exception as e:
+        logger.warning("Could not load generations from disk: %s", e)
+
+    # Recovery: Scan filesystem for existing project directories
+    try:
+        users_dir = settings.storage_root_path / "users"
+        if users_dir.is_dir():
+            for user_folder in users_dir.iterdir():
+                if not user_folder.is_dir():
+                    continue
+                uid = user_folder.name
+                proj_dir = user_folder / "projects"
+                if not proj_dir.is_dir():
+                    continue
+                for p_folder in proj_dir.iterdir():
+                    if not p_folder.is_dir():
+                        continue
+                    pid = p_folder.name
+                    if pid not in _PROJECTS_DB:
+                        pers_dir = p_folder / "personalizations"
+                        gen_ids = []
+                        latest_gen_id = None
+                        out_vid_url = None
+                        model_name = "test1"
+                        tmpl_title = "Test1"
+                        if pers_dir.is_dir():
+                            for g_folder in pers_dir.iterdir():
+                                if not g_folder.is_dir():
+                                    continue
+                                gid = g_folder.name
+                                gen_ids.append(gid)
+                                latest_gen_id = gid
+                                man_file = g_folder / "inputs" / "manifest.json"
+                                if man_file.is_file():
+                                    try:
+                                        m_data = json.loads(man_file.read_text(encoding="utf-8"))
+                                        model_name = m_data.get("model_snapshot", {}).get("display_name", model_name)
+                                        tmpl_title = m_data.get("template_snapshot", {}).get("title", tmpl_title)
+                                    except Exception:
+                                        pass
+                                vid_file = g_folder / "base-video" / "personalized_base_video.mp4"
+                                if vid_file.is_file():
+                                    out_vid_url = f"/api/v1/assets/media/{gid}.mp4"
+
+                        _PROJECTS_DB[pid] = {
+                            "project_id": pid,
+                            "user_id": uid,
+                            "name": f"{model_name} - {tmpl_title}",
+                            "description": f"Dự án cá nhân hóa người mẫu {model_name} vào video mẫu {tmpl_title}.",
+                            "model_id": "test1",
+                            "model_name": model_name,
+                            "template_id": "Test1",
+                            "template_title": tmpl_title,
+                            "current_generation_id": latest_gen_id,
+                            "output_video_url": out_vid_url,
+                            "generations": gen_ids,
+                            "created_at": _now_iso(),
+                            "updated_at": _now_iso(),
+                        }
+            _save_projects_db()
+    except Exception as e:
+        logger.warning("Filesystem project recovery failed: %s", e)
+
+
+_load_databases()
 
 
 class PersonalizationService:
@@ -332,6 +439,8 @@ class PersonalizationService:
         _PROJECTS_DB[project_id]["generations"].append(generation_id)
         _PROJECTS_DB[project_id]["current_generation_id"] = generation_id
         _PROJECTS_DB[project_id]["updated_at"] = now
+        _save_projects_db()
+        _save_generations_db()
 
         # Update model's used_in_projects_count
         model["used_in_projects_count"] = model.get("used_in_projects_count", 0) + 1
@@ -555,6 +664,8 @@ class PersonalizationService:
                 _PROJECTS_DB[p_id]["output_video_url"] = record["output_video_url"]
                 _PROJECTS_DB[p_id]["current_generation_id"] = generation_id
                 _PROJECTS_DB[p_id]["updated_at"] = _now_iso()
+            _save_projects_db()
+            _save_generations_db()
 
         except Exception as e:
             logger.exception(
@@ -818,6 +929,16 @@ class PersonalizationService:
             **summary.model_dump(),
             generations=gen_responses,
         )
+
+    def delete_project(self, project_id: str, user_id: str) -> bool:
+        p = _PROJECTS_DB.get(project_id)
+        if not p:
+            raise ValueError(f"Không tìm thấy dự án '{project_id}'.")
+        if p.get("user_id") != user_id:
+            raise PermissionError("Bạn không có quyền xóa dự án này.")
+        del _PROJECTS_DB[project_id]
+        _save_projects_db()
+        return True
 
     def _build_generation_response(
         self, r: dict[str, Any]

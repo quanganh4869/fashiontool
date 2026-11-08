@@ -33,5 +33,10 @@ export async function apiClient<T>(
     throw new Error(`API Request Error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204) {
+    return undefined as unknown as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }

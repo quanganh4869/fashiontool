@@ -197,6 +197,12 @@ export const studioService = {
     };
   },
 
+  async deleteProject(projectId: string): Promise<void> {
+    await apiClient(`/personalization/projects/${projectId}`, {
+      method: 'DELETE',
+    });
+  },
+
   /**
    * Build absolute URL for video stream or view
    */
