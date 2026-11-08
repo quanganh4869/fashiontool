@@ -64,10 +64,10 @@ export const AppShell: React.FC = () => {
   return (
     <div
       style={{ '--sidebar-w': isCollapsed ? '72px' : '252px' } as React.CSSProperties}
-      className="min-h-screen flex bg-[#F6F5F2] text-[#242321] font-sans antialiased"
+      className="h-screen w-screen overflow-hidden flex bg-[#F6F5F2] text-[#242321] font-sans antialiased"
     >
       {/* Desktop Persistent Sidebar */}
-      <div className="hidden lg:block shrink-0">
+      <div className="hidden lg:block shrink-0 h-screen">
         <Sidebar
           isCollapsed={isCollapsed}
           onToggleCollapse={handleToggleCollapse}
@@ -96,14 +96,14 @@ export const AppShell: React.FC = () => {
         </div>
       )}
 
-      {/* Right Column: Topbar + Main Scrollable Canvas */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      {/* Right Column: Topbar + Main Locked Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Topbar onOpenMobileMenu={() => setIsMobileOpen(true)} />
 
-        {/* Main Content Area */}
+        {/* Main Workspace Area */}
         <main
           className={cn(
-            'flex-1 p-4 sm:p-7 lg:p-8 bg-[#F6F5F2]',
+            'flex-1 min-h-0 flex flex-col overflow-hidden bg-[#F6F5F2]',
             'transition-[padding] duration-200'
           )}
         >

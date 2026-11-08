@@ -53,22 +53,22 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
               <CheckCircle2 className="w-5 h-5" />
             </span>
             <h2 className="text-xl font-bold text-slate-900">
-              Personalized Base Video đã sẵn sàng
+              Personalized Base Video đã hoàn thành
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-600">
             <span className="inline-flex items-center gap-1 font-medium text-slate-800">
               <User className="w-3.5 h-3.5 text-[#654B7B]" />
-              {generation.modelName}
+              Người mẫu: {generation.modelName}
             </span>
             <span>•</span>
             <span className="inline-flex items-center gap-1 font-medium text-slate-800">
               <Clapperboard className="w-3.5 h-3.5 text-[#654B7B]" />
-              {generation.templateTitle}
+              Video mẫu: {generation.templateTitle}
             </span>
             <span>•</span>
-            <span className="text-slate-500">
-              Dự án: <span className="font-semibold text-slate-700">{generation.projectName}</span>
+            <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
+              Dự án đã lưu: <span className="font-semibold text-slate-900">{generation.projectName}</span>
             </span>
           </div>
         </div>
@@ -77,35 +77,12 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
           <Button
             variant="secondary"
             size="sm"
-            onClick={onCreateNewVersion}
-            className="gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Tạo phiên bản mới
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
             onClick={onOpenProjects}
-            className="gap-2"
+            className="gap-2 text-xs"
           >
-            <FolderKanban className="w-4 h-4" />
-            Dự án của tôi
+            <FolderKanban className="w-4 h-4 text-slate-500" />
+            Danh sách dự án
           </Button>
-
-          {onProceedToProducts && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={onProceedToProducts}
-              className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-            >
-              <Package className="w-4 h-4" />
-              <span>Tiếp tục: Nhập sản phẩm</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -160,24 +137,29 @@ export const GenerationResultStep: React.FC<GenerationResultStepProps> = ({
 
       {/* Pinned Bottom Navigation */}
       <div className="fixed bottom-0 right-0 left-0 lg:left-[var(--sidebar-w,252px)] z-30 bg-white/95 backdrop-blur-md border-t border-[#E8E5E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] transition-[left] duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-7 lg:px-8 py-3.5 flex items-center justify-between gap-4">
           <Button
             variant="secondary"
             onClick={onCreateNewVersion}
-            className="gap-2"
+            className="gap-2 text-xs"
           >
             <RotateCcw className="w-4 h-4" />
-            Tạo phiên bản mới
+            Làm lại video khác
           </Button>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            Dự án đã lưu: <span className="font-bold text-slate-900">{generation.projectName}</span>
+          </div>
 
           {onProceedToProducts && (
             <Button
               variant="primary"
               onClick={onProceedToProducts}
-              className="gap-2 shadow-sm"
+              className="gap-2 shadow-sm font-semibold px-6 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white text-sm"
             >
               <Package className="w-4 h-4" />
-              <span>Tiếp tục: Nhập sản phẩm (Bước 6)</span>
+              <span>Tiếp tục: Sang bước 6 (Nhập sản phẩm)</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           )}

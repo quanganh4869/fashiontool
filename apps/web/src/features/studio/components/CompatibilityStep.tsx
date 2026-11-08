@@ -5,6 +5,7 @@ import {
   XCircle,
   HelpCircle,
   ArrowLeft,
+  ArrowRight,
   Sparkles,
   User,
   Clapperboard,
@@ -282,18 +283,18 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
       ) : null}
 
       {/* Project Name Settings */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+      <div className="bg-white border border-[#E8E5E0] rounded-xl p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <FolderPlus className="w-4 h-4 text-indigo-600" />
-          <h4 className="text-sm font-bold text-slate-900">Thông tin dự án lưu trữ</h4>
+          <FolderPlus className="w-4 h-4 text-[#654B7B]" />
+          <h4 className="text-sm font-bold text-slate-900">Thiết lập tên dự án mới</h4>
         </div>
         <p className="text-xs text-slate-600">
-          Video nền sau khi hoàn thành sẽ được lưu vào một dự án độc lập để bạn có thể xem lại hoặc tiếp tục bước thay đổi trang phục sau này.
+          Video nền khi tạo xong sẽ được tự động lưu vào dự án này để tiếp tục sang các bước ghép sản phẩm và thay đổi trang phục.
         </p>
 
         <div className="max-w-md">
           <Input
-            label="Tên dự án"
+            label="Tên dự án mới sẽ tạo"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             placeholder="Nhập tên dự án..."
@@ -313,17 +314,18 @@ export const CompatibilityStep: React.FC<CompatibilityStepProps> = ({
             variant="primary"
             onClick={() => onStartGeneration(projectName, confirmedLimitations)}
             disabled={!canGenerate || isCreating}
-            className="gap-2 shadow-sm"
+            className="gap-2 shadow-sm font-semibold px-6 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white"
           >
             {isCreating ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Đang khởi tạo job...
+                Đang tạo dự án & khởi tạo video...
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                Bắt đầu tạo video cá nhân hóa
+                <span>Tạo dự án & Bắt đầu tạo video</span>
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </Button>

@@ -267,9 +267,9 @@ export const TemplateSelectStep: React.FC<TemplateSelectStepProps> = ({
               variant="primary"
               onClick={onNext}
               disabled={!selectedTemplate}
-              className="gap-2 shadow-sm"
+              className="gap-2 shadow-sm font-semibold px-5 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white"
             >
-              Tiếp tục: Kiểm tra tương thích
+              Tiếp tục: Sang bước 3 (Kiểm tra & Tạo dự án)
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>

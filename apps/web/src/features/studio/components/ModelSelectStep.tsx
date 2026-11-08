@@ -220,9 +220,9 @@ export const ModelSelectStep: React.FC<ModelSelectStepProps> = ({
             variant="primary"
             onClick={onNext}
             disabled={!selectedModel}
-            className="gap-2 shadow-sm"
+            className="gap-2 shadow-sm font-semibold px-5 py-2.5 bg-[#654B7B] hover:bg-[#523C64] text-white"
           >
-            Tiếp tục: Chọn video mẫu
+            Tiếp tục: Sang bước 2 (Chọn video mẫu)
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>

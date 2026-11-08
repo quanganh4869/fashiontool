@@ -47,13 +47,14 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           Dự án của tôi
         </Button>
         <Button
-          variant="primary"
+          variant="secondary"
           size="sm"
-          className="gap-2"
+          className="gap-1.5 text-xs text-slate-700 hover:text-slate-900"
           onClick={onNewProject}
+          title="Bắt đầu lại từ bước 1 để tạo video mới"
         >
-          <PlusCircle className="w-4 h-4" />
-          Tạo mới
+          <PlusCircle className="w-3.5 h-3.5 text-slate-500" />
+          Làm dự án mới
         </Button>
       </div>
     </div>
